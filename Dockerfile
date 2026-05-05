@@ -59,6 +59,9 @@ COPY --from=builder /app/node_modules/@prisma/debug ./node_modules/@prisma/debug
 COPY --from=builder /app/node_modules/@prisma/engines-version ./node_modules/@prisma/engines-version
 COPY --from=builder /app/node_modules/@prisma/fetch-engine ./node_modules/@prisma/fetch-engine
 
+# Copy 'effect' library required by @prisma/config in Prisma 7.x
+COPY --from=builder /app/node_modules/effect ./node_modules/effect
+
 # Copy entrypoint script
 COPY entrypoint.sh ./entrypoint.sh
 
