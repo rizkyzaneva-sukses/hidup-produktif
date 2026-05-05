@@ -45,8 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-    router.refresh();
+    window.location.href = '/login';
   }
   const [mobileOpen, setMobileOpen] = useState(false);
 
