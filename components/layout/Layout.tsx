@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { QuickCaptureFAB } from '@/components/shared/QuickCaptureFAB';
 
@@ -38,7 +38,16 @@ const BOTTOM_NAV = [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+
+  if (pathname === '/login') return <>{children}</>;
+
+  async function handleLogout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  }
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -138,7 +147,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </nav>
 
       {/* Bottom */}
-      <div className="p-2 border-t border-slate-700/50">
+      <div className="p-2 border-t border-slate-700/50 space-y-0.5">
         <Link href="/settings"
           className={cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:bg-slate-800/80 hover:text-white transition-colors',
@@ -149,6 +158,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <span className="text-lg">⚙️</span>
           {(!collapsed || mobile) && <span>Settings</span>}
         </Link>
+        <button
+          onClick={handleLogout}
+          className={cn(
+            'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-colors',
+            collapsed && !mobile ? 'justify-center px-2' : ''
+          )}
+          title={collapsed && !mobile ? 'Logout' : undefined}
+        >
+          <span className="text-lg">🚪</span>
+          {(!collapsed || mobile) && <span>Logout</span>}
+        </button>
       </div>
     </div>
   );
