@@ -26,9 +26,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 
-# Run database migrations during build (DATABASE_URL available via build arg)
-RUN npx prisma migrate deploy --config prisma/prisma.config.ts
-
 RUN npm run build
 
 # Production image, copy all the files and run next
@@ -51,6 +48,20 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copy prisma schema, migrations, config and CLI for runtime migrations
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
+COPY --from=builder /app/node_modules/@prisma/config ./node_modules/@prisma/config
+COPY --from=builder /app/node_modules/@prisma/dev ./node_modules/@prisma/dev
+COPY --from=builder /app/node_modules/@prisma/get-platform ./node_modules/@prisma/get-platform
+COPY --from=builder /app/node_modules/@prisma/debug ./node_modules/@prisma/debug
+COPY --from=builder /app/node_modules/@prisma/engines-version ./node_modules/@prisma/engines-version
+COPY --from=builder /app/node_modules/@prisma/fetch-engine ./node_modules/@prisma/fetch-engine
+
+# Copy entrypoint script
+COPY entrypoint.sh ./entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -58,4 +69,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+CMD ["sh", "entrypoint.sh"]
