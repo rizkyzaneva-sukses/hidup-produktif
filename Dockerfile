@@ -7,10 +7,12 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma/
-RUN npm ci
 
-# Generate Prisma Client
-RUN npx prisma generate
+# DATABASE_URL is needed for prisma generate in postinstall
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -20,6 +22,9 @@ COPY . .
 
 # Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1
+
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
 
 RUN npm run build
 
