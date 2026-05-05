@@ -1,0 +1,169 @@
+# Prisma schema for PostgreSQL (Easypanel deployment)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  role      String   @default("CEO")
+  priority  String   @default("Sedang")
+  workType  String   @default("Admin") @map("work_type")
+  completed Boolean  @default(false)
+  notes     String?
+  dueDate   String?  @map("due_date")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("tasks")
+}
+
+model DailySprint {
+  id             String   @id @default(cuid())
+  date           String   @unique
+  energyLevel    Int?     @map("energy_level")
+  intention      String?
+  reflection     String?
+  tasks          String   @default("[]")
+  eodNotes       String?  @map("eod_notes")
+  eodTaskStatuses String  @default("[]") @map("eod_task_statuses")
+  eodSubmittedAt String?  @map("eod_submitted_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("daily_sprints")
+}
+
+model Habit {
+  id        String     @id @default(cuid())
+  label     String
+  emoji     String?
+  active    Boolean    @default(true)
+  pinned    Boolean    @default(false)
+  sortOrder Int        @default(0) @map("sort_order")
+  createdAt DateTime   @default(now()) @map("created_at")
+  logs      HabitLog[]
+
+  @@map("habits")
+}
+
+model HabitLog {
+  id        String  @id @default(cuid())
+  habitId   String  @map("habit_id")
+  date      String
+  completed Boolean @default(true)
+  habit     Habit   @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@map("habit_logs")
+}
+
+model Idea {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  role        String   @default("Umum")
+  category    String   @default("Random")
+  status      String   @default("Mentah")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("ideas")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  role        String   @default("CEO")
+  deadline    String?
+  status      String   @default("Aktif")
+  subtasks    String   @default("[]")
+  ideaId      String?  @map("idea_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("projects")
+}
+
+model LearningLog {
+  id              String   @id @default(cuid())
+  title           String
+  type            String
+  insight         String?
+  durationMinutes Int?     @map("duration_minutes")
+  logDate         String?  @map("log_date")
+  finished        Boolean  @default(false)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("learning_logs")
+}
+
+model Reminder {
+  id        String   @id @default(cuid())
+  title     String
+  role      String
+  date      String?
+  frequency String   @default("Sekali")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("reminders")
+}
+
+model Subscription {
+  id              String   @id @default(cuid())
+  nama            String
+  nominal         Int      @default(0)
+  tanggalRenewal  String?  @map("tanggal_renewal")
+  kategori        String   @default("Software")
+  status          String   @default("Aktif")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
+model WeeklyReview {
+  id              String   @id @default(cuid())
+  weekStart       String   @unique @map("week_start")
+  reflectionNotes String?  @map("reflection_notes")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("weekly_reviews")
+}
+
+model ShoppingItem {
+  id        String   @id @default(cuid())
+  name      String
+  role      String   @default("Suami")
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("shopping_items")
+}
+
+model CustomRole {
+  id        String   @id @default(cuid())
+  name      String
+  emoji     String   @default("⭐")
+  hue       Int      @default(239)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("custom_roles")
+}
+
+model AppConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String?
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_config")
+}
