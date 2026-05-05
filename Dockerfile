@@ -27,7 +27,7 @@ ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 
 # Run database migrations during build (DATABASE_URL available via build arg)
-RUN npx prisma migrate deploy
+RUN npx prisma migrate deploy --config prisma/prisma.config.ts
 
 RUN npm run build
 
