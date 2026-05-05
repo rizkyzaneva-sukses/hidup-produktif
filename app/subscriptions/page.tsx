@@ -3,27 +3,74 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { SUB_CATEGORIES } from '@/lib/constants';
 import { formatRupiah } from '@/lib/utils';
-import { Card, CardContent, Button, Input, Select, Dialog, EmptyState, Badge } from '@/components/ui';
+import { Button, Input, Select, Dialog, EmptyState, Badge } from '@/components/ui';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+const EMPTY_FORM = { nama: '', nominal: '', tanggal_renewal: '', kategori: 'Software', status: 'Aktif' };
+
+function SubForm({ data, setData, onSave, onClose }: {
+  data: any;
+  setData: (fn: (p: any) => any) => void;
+  onSave: (d: any) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <Input
+        placeholder="Nama tool/ecourse *"
+        value={data.nama}
+        onChange={(e: any) => setData((p: any) => ({ ...p, nama: e.target.value }))}
+      />
+      <div className="grid grid-cols-2 gap-2">
+        <Input
+          placeholder="Nominal/bulan (Rp)"
+          type="number"
+          value={data.nominal}
+          onChange={(e: any) => setData((p: any) => ({ ...p, nominal: e.target.value }))}
+        />
+        <Input
+          type="date"
+          value={data.tanggal_renewal}
+          onChange={(e: any) => setData((p: any) => ({ ...p, tanggal_renewal: e.target.value }))}
+        />
+        <Select
+          options={SUB_CATEGORIES.map(c => ({ value: c, label: c }))}
+          value={data.kategori}
+          onChange={(e: any) => setData((p: any) => ({ ...p, kategori: e.target.value }))}
+        />
+        <Select
+          options={['Aktif', 'Berhenti'].map(s => ({ value: s, label: s }))}
+          value={data.status}
+          onChange={(e: any) => setData((p: any) => ({ ...p, status: e.target.value }))}
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={() => { if (!data.nama.trim()) return; onSave(data); }} className="flex-1">Simpan</Button>
+        <Button variant="outline" onClick={onClose}>Batal</Button>
+      </div>
+    </div>
+  );
+}
 
 export default function SubscriptionsPage() {
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
-  const emptyForm = { nama: '', nominal: '', tanggal_renewal: '', kategori: 'Software', status: 'Aktif' };
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const { data: subs = [] } = useQuery({ queryKey: ['subscriptions'], queryFn: () => fetcher('/api/subscriptions') });
 
   const create = useMutation({
     mutationFn: (d: any) => fetch('/api/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...d, nominal: parseInt(d.nominal) || 0 }) }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['subscriptions'] }); setShowForm(false); setForm(emptyForm); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['subscriptions'] }); setShowForm(false); setForm(EMPTY_FORM); },
   });
+
   const update = useMutation({
     mutationFn: ({ id, ...d }: any) => fetch(`/api/subscriptions/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...d, nominal: parseInt(d.nominal) || 0 }) }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['subscriptions'] }); setEditItem(null); },
   });
+
   const del = useMutation({
     mutationFn: (id: string) => fetch(`/api/subscriptions/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['subscriptions'] }),
@@ -31,28 +78,11 @@ export default function SubscriptionsPage() {
 
   const activeSubs = subs.filter((s: any) => s.status === 'Aktif');
   const totalBulan = activeSubs.reduce((sum: number, s: any) => sum + (s.nominal || 0), 0);
-
-  // Check H-7
   const today = new Date();
   const in7 = new Date(); in7.setDate(today.getDate() + 7);
   const in7Str = in7.toISOString().split('T')[0];
-  const nearRenewal = activeSubs.filter((s: any) => s.tanggal_renewal <= in7Str && s.tanggal_renewal >= today.toISOString().split('T')[0]);
-
-  const FormContent = ({ data, setData, onSave }: any) => (
-    <div className="space-y-3">
-      <Input placeholder="Nama tool/ecourse *" value={data.nama} onChange={(e: any) => setData((p: any) => ({ ...p, nama: e.target.value }))} />
-      <div className="grid grid-cols-2 gap-2">
-        <Input placeholder="Nominal/bulan (Rp)" type="number" value={data.nominal} onChange={(e: any) => setData((p: any) => ({ ...p, nominal: e.target.value }))} />
-        <Input type="date" value={data.tanggal_renewal} onChange={(e: any) => setData((p: any) => ({ ...p, tanggal_renewal: e.target.value }))} />
-        <Select options={SUB_CATEGORIES.map(c => ({ value: c, label: c }))} value={data.kategori} onChange={(e: any) => setData((p: any) => ({ ...p, kategori: e.target.value }))} />
-        <Select options={['Aktif', 'Berhenti'].map(s => ({ value: s, label: s }))} value={data.status} onChange={(e: any) => setData((p: any) => ({ ...p, status: e.target.value }))} />
-      </div>
-      <div className="flex gap-2">
-        <Button onClick={() => { if (!data.nama.trim()) return; onSave(data); }} className="flex-1">Simpan</Button>
-        <Button variant="outline" onClick={() => { setShowForm(false); setEditItem(null); }}>Batal</Button>
-      </div>
-    </div>
-  );
+  const todayStr = today.toISOString().split('T')[0];
+  const nearRenewal = activeSubs.filter((s: any) => s.tanggal_renewal <= in7Str && s.tanggal_renewal >= todayStr);
 
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4">
@@ -64,7 +94,6 @@ export default function SubscriptionsPage() {
         <Button size="sm" onClick={() => setShowForm(true)}>+ Langganan</Button>
       </div>
 
-      {/* H-7 alert */}
       {nearRenewal.length > 0 && (
         <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
           <p className="text-amber-400 text-sm font-medium">⚠️ {nearRenewal.length} subscription renewal dalam 7 hari</p>
@@ -83,7 +112,7 @@ export default function SubscriptionsPage() {
       ) : (
         <div className="space-y-2">
           {subs.map((s: any) => {
-            const isNear = s.status === 'Aktif' && s.tanggal_renewal <= in7Str && s.tanggal_renewal >= today.toISOString().split('T')[0];
+            const isNear = s.status === 'Aktif' && s.tanggal_renewal <= in7Str && s.tanggal_renewal >= todayStr;
             return (
               <div key={s.id} className={`flex items-center gap-3 p-3 rounded-xl border ${s.status === 'Berhenti' ? 'border-slate-700/30 bg-slate-800/20 opacity-50' : isNear ? 'border-amber-500/40 bg-amber-500/5' : 'border-slate-700/50 bg-slate-800/40'}`}>
                 <div className="flex-1 min-w-0">
@@ -111,7 +140,6 @@ export default function SubscriptionsPage() {
         </div>
       )}
 
-      {/* Total */}
       {activeSubs.length > 0 && (
         <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 flex justify-between">
           <span className="text-sm text-slate-400">Total pengeluaran aktif/bulan</span>
@@ -120,10 +148,13 @@ export default function SubscriptionsPage() {
       )}
 
       <Dialog open={showForm} onClose={() => setShowForm(false)} title="💳 Tambah Langganan">
-        <FormContent data={form} setData={setForm} onSave={(d: any) => create.mutate(d)} />
+        <SubForm data={form} setData={setForm} onSave={(d) => create.mutate(d)} onClose={() => setShowForm(false)} />
       </Dialog>
+
       <Dialog open={!!editItem} onClose={() => setEditItem(null)} title="✏️ Edit Langganan">
-        {editItem && <FormContent data={editItem} setData={setEditItem} onSave={(d: any) => update.mutate({ id: editItem.id, ...d })} />}
+        {editItem && (
+          <SubForm data={editItem} setData={setEditItem} onSave={(d) => update.mutate({ id: editItem.id, ...d })} onClose={() => setEditItem(null)} />
+        )}
       </Dialog>
     </div>
   );
