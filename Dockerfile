@@ -59,9 +59,10 @@ COPY --from=builder /app/node_modules/@prisma/debug ./node_modules/@prisma/debug
 COPY --from=builder /app/node_modules/@prisma/engines-version ./node_modules/@prisma/engines-version
 COPY --from=builder /app/node_modules/@prisma/fetch-engine ./node_modules/@prisma/fetch-engine
 
-# Copy 'effect' and 'fast-check' libraries required by @prisma/config in Prisma 7.x
+# Full dep chain required by prisma CLI at runtime: @prisma/config -> effect -> fast-check -> pure-rand
 COPY --from=builder /app/node_modules/effect ./node_modules/effect
 COPY --from=builder /app/node_modules/fast-check ./node_modules/fast-check
+COPY --from=builder /app/node_modules/pure-rand ./node_modules/pure-rand
 
 # Copy entrypoint script
 COPY entrypoint.sh ./entrypoint.sh
