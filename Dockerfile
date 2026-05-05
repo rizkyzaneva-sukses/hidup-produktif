@@ -20,13 +20,25 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Disable telemetry during build
 ENV NEXT_TELEMETRY_DISABLED=1
 
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 
 RUN npm run build
+
+# Dedicated stage: install production deps (for prisma CLI runtime)
+FROM base AS prod-deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY prisma ./prisma/
+
+ARG DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
+
+RUN npm ci --omit=dev
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -40,7 +52,6 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 
-# Set the correct permission for prerender cache
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
@@ -48,21 +59,11 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy prisma schema, migrations, config and CLI for runtime migrations
+# Copy prisma schema and migrations
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
-COPY --from=builder /app/node_modules/@prisma/config ./node_modules/@prisma/config
-COPY --from=builder /app/node_modules/@prisma/dev ./node_modules/@prisma/dev
-COPY --from=builder /app/node_modules/@prisma/get-platform ./node_modules/@prisma/get-platform
-COPY --from=builder /app/node_modules/@prisma/debug ./node_modules/@prisma/debug
-COPY --from=builder /app/node_modules/@prisma/engines-version ./node_modules/@prisma/engines-version
-COPY --from=builder /app/node_modules/@prisma/fetch-engine ./node_modules/@prisma/fetch-engine
 
-# Full dep chain required by prisma CLI at runtime: @prisma/config -> effect -> fast-check -> pure-rand
-COPY --from=builder /app/node_modules/effect ./node_modules/effect
-COPY --from=builder /app/node_modules/fast-check ./node_modules/fast-check
-COPY --from=builder /app/node_modules/pure-rand ./node_modules/pure-rand
+# Copy ALL production node_modules so prisma CLI has every transitive dep it needs
+COPY --from=prod-deps /app/node_modules ./node_modules
 
 # Copy entrypoint script
 COPY entrypoint.sh ./entrypoint.sh
