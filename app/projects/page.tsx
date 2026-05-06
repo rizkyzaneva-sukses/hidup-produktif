@@ -1,6 +1,6 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ROLES, PROJECT_STATUSES } from '@/lib/constants';
 import { Card, CardContent, Button, Input, Select, Dialog, Textarea, Badge, EmptyState, ProgressBar } from '@/components/ui';
 import { RoleBadge } from '@/components/shared/badges';
@@ -10,6 +10,7 @@ const fetcher = (url: string) => fetch(url).then(r => r.json());
 interface SubSubTask { title: string; completed: boolean; }
 interface SubTask { title: string; completed: boolean; children: SubSubTask[]; }
 interface TaskNode { title: string; completed: boolean; children: SubTask[]; }
+type FlatItem = { title: string; completed: boolean; level: 0 | 1 | 2; };
 
 function normalize(raw: any[]): TaskNode[] {
   return (raw || []).map(item => ({
@@ -26,94 +27,126 @@ function normalize(raw: any[]): TaskNode[] {
   }));
 }
 
+function toFlat(nodes: TaskNode[]): FlatItem[] {
+  const result: FlatItem[] = [];
+  for (const n of nodes) {
+    result.push({ title: n.title, completed: n.completed, level: 0 });
+    for (const s of n.children) {
+      result.push({ title: s.title, completed: s.completed, level: 1 });
+      for (const ss of s.children) {
+        result.push({ title: ss.title, completed: ss.completed, level: 2 });
+      }
+    }
+  }
+  return result;
+}
+
+function fromFlat(items: FlatItem[]): TaskNode[] {
+  const nodes: TaskNode[] = [];
+  let curNode: TaskNode | null = null;
+  let curSub: SubTask | null = null;
+  for (const item of items) {
+    if (item.level === 0) {
+      curNode = { title: item.title, completed: item.completed, children: [] };
+      curSub = null;
+      nodes.push(curNode);
+    } else if (item.level === 1) {
+      if (!curNode) { curNode = { title: '', completed: false, children: [] }; nodes.push(curNode); }
+      curSub = { title: item.title, completed: item.completed, children: [] };
+      curNode.children.push(curSub);
+    } else {
+      if (!curNode) { curNode = { title: '', completed: false, children: [] }; nodes.push(curNode); }
+      if (!curSub) { curSub = { title: '', completed: false, children: [] }; curNode.children.push(curSub); }
+      curSub.children.push({ title: item.title, completed: item.completed });
+    }
+  }
+  return nodes;
+}
+
 function countNodes(tasks: TaskNode[]) {
   let total = 0, done = 0;
   for (const t of tasks) {
     total++; if (t.completed) done++;
     for (const s of t.children) {
       total++; if (s.completed) done++;
-      for (const ss of s.children) {
-        total++; if (ss.completed) done++;
-      }
+      for (const ss of s.children) { total++; if (ss.completed) done++; }
     }
   }
   return { total, done };
 }
 
 function SubtaskEditor({ value, onChange }: { value: TaskNode[]; onChange: (v: TaskNode[]) => void }) {
-  const set = (fn: (v: TaskNode[]) => TaskNode[]) => onChange(fn([...value]));
+  const [items, setItems] = useState<FlatItem[]>(() => toFlat(value).length > 0 ? toFlat(value) : []);
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const updateMain = (i: number, title: string) => set(v => { v[i] = { ...v[i], title }; return v; });
-  const removeMain = (i: number) => onChange(value.filter((_, idx) => idx !== i));
-  const addMain = () => onChange([...value, { title: '', completed: false, children: [] }]);
+  const update = (next: FlatItem[]) => {
+    setItems(next);
+    onChange(fromFlat(next));
+  };
 
-  const updateSub = (i: number, j: number, title: string) => set(v => {
-    v[i] = { ...v[i], children: v[i].children.map((c, ci) => ci === j ? { ...c, title } : c) };
-    return v;
-  });
-  const removeSub = (i: number, j: number) => set(v => {
-    v[i] = { ...v[i], children: v[i].children.filter((_, ci) => ci !== j) };
-    return v;
-  });
-  const addSub = (i: number) => set(v => {
-    v[i] = { ...v[i], children: [...v[i].children, { title: '', completed: false, children: [] }] };
-    return v;
-  });
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const newItem: FlatItem = { title: '', completed: false, level: items[idx].level };
+      const next = [...items];
+      next.splice(idx + 1, 0, newItem);
+      update(next);
+      setTimeout(() => refs.current[idx + 1]?.focus(), 0);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      const next = [...items];
+      if (e.shiftKey) {
+        if (next[idx].level > 0) next[idx] = { ...next[idx], level: (next[idx].level - 1) as 0 | 1 | 2 };
+      } else {
+        if (next[idx].level < 2) next[idx] = { ...next[idx], level: (next[idx].level + 1) as 0 | 1 | 2 };
+      }
+      update(next);
+    } else if (e.key === 'Backspace' && items[idx].title === '' && items.length > 1) {
+      e.preventDefault();
+      const next = items.filter((_, i) => i !== idx);
+      update(next);
+      setTimeout(() => refs.current[Math.max(0, idx - 1)]?.focus(), 0);
+    }
+  };
 
-  const updateSubSub = (i: number, j: number, k: number, title: string) => set(v => {
-    v[i].children[j] = { ...v[i].children[j], children: v[i].children[j].children.map((c, ci) => ci === k ? { ...c, title } : c) };
-    return v;
-  });
-  const removeSubSub = (i: number, j: number, k: number) => set(v => {
-    v[i].children[j] = { ...v[i].children[j], children: v[i].children[j].children.filter((_, ci) => ci !== k) };
-    return v;
-  });
-  const addSubSub = (i: number, j: number) => set(v => {
-    v[i].children[j] = { ...v[i].children[j], children: [...v[i].children[j].children, { title: '', completed: false }] };
-    return v;
-  });
+  const INDENT = ['', 'pl-5', 'pl-10'] as const;
+  const BULLET_COLOR = ['text-blue-400', 'text-slate-500', 'text-slate-700'] as const;
+  const BULLET = ['●', '└', '└'] as const;
+  const PH = ['Utama... (Enter=next, Tab=jorok, Shift+Tab=balik)', 'Sub...', 'Sub-sub...'] as const;
+  const H = ['h-7', 'h-7', 'h-6'] as const;
+  const FS = ['text-xs', 'text-xs', 'text-[11px]'] as const;
 
   return (
-    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-      {value.map((task, i) => (
-        <div key={i} className="border border-slate-700 rounded-xl p-2 space-y-1.5 bg-slate-800/30">
-          <div className="flex items-center gap-1.5">
-            <span className="text-blue-400 text-xs">●</span>
-            <Input value={task.title} onChange={e => updateMain(i, e.target.value)} placeholder="Utama..." className="h-7 text-xs flex-1" />
-            <button onClick={() => removeMain(i)} className="text-red-400 hover:text-red-300 text-sm px-1 flex-shrink-0">×</button>
-          </div>
-          <div className="pl-4 space-y-1.5">
-            {task.children.map((sub, j) => (
-              <div key={j} className="space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-500 text-xs">└</span>
-                  <Input value={sub.title} onChange={e => updateSub(i, j, e.target.value)} placeholder="Sub..." className="h-7 text-xs flex-1" />
-                  <button onClick={() => removeSub(i, j)} className="text-red-400 hover:text-red-300 text-sm px-1 flex-shrink-0">×</button>
-                </div>
-                <div className="pl-5 space-y-1">
-                  {sub.children.map((ss, k) => (
-                    <div key={k} className="flex items-center gap-1.5">
-                      <span className="text-slate-700 text-xs">└</span>
-                      <Input value={ss.title} onChange={e => updateSubSub(i, j, k, e.target.value)} placeholder="Sub-sub..." className="h-6 text-[11px] flex-1" />
-                      <button onClick={() => removeSubSub(i, j, k)} className="text-red-400 hover:text-red-300 text-sm px-1 flex-shrink-0">×</button>
-                    </div>
-                  ))}
-                  <button onClick={() => addSubSub(i, j)} className="text-[11px] text-slate-600 hover:text-slate-400 pl-4 transition-colors">+ sub-sub</button>
-                </div>
-              </div>
-            ))}
-            <button onClick={() => addSub(i)} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">+ sub</button>
-          </div>
+    <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
+      {items.map((item, idx) => (
+        <div key={idx} className={`flex items-center gap-1.5 ${INDENT[item.level]}`}>
+          <span className={`${BULLET_COLOR[item.level]} text-xs flex-shrink-0`}>{BULLET[item.level]}</span>
+          <input
+            ref={el => { refs.current[idx] = el; }}
+            value={item.title}
+            onChange={e => { const next = [...items]; next[idx] = { ...next[idx], title: e.target.value }; update(next); }}
+            onKeyDown={e => handleKeyDown(e, idx)}
+            placeholder={PH[item.level]}
+            className={`flex-1 ${H[item.level]} ${FS[item.level]} px-2 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/50`}
+          />
+          <button onClick={() => update(items.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-300 text-sm px-1 flex-shrink-0">×</button>
         </div>
       ))}
-      <button onClick={addMain} className="w-full text-xs text-blue-400 hover:text-blue-300 border border-dashed border-slate-700 hover:border-blue-500/50 rounded-xl py-2 transition-colors">
+      <button
+        onClick={() => {
+          const next = [...items, { title: '', completed: false, level: 0 as const }];
+          update(next);
+          setTimeout(() => refs.current[items.length]?.focus(), 0);
+        }}
+        className="w-full text-xs text-blue-400 hover:text-blue-300 border border-dashed border-slate-700 hover:border-blue-500/50 rounded-xl py-2 transition-colors"
+      >
         + Tambah Utama
       </button>
     </div>
   );
 }
 
-interface CreateForm { name: string; description: string; role: string; deadline: string; subtasks: TaskNode[]; }
+interface CreateForm { name: string; description: string; role: string; deadline: string; }
 
 export default function ProjectsPage() {
   const qc = useQueryClient();
@@ -123,7 +156,8 @@ export default function ProjectsPage() {
   const [editForm, setEditForm] = useState<any>({});
   const [editSubtasks, setEditSubtasks] = useState<TaskNode[]>([]);
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState<CreateForm>({ name: '', description: '', role: 'CEO', deadline: '', subtasks: [] });
+  const [createForm, setCreateForm] = useState<CreateForm>({ name: '', description: '', role: 'CEO', deadline: '' });
+  const [createSubtasks, setCreateSubtasks] = useState<TaskNode[]>([]);
 
   const { data: projects = [] } = useQuery({ queryKey: ['projects'], queryFn: () => fetcher('/api/projects') });
   const { data: customRoles = [] } = useQuery({ queryKey: ['custom-roles'], queryFn: () => fetcher('/api/custom-roles') });
@@ -134,7 +168,8 @@ export default function ProjectsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['projects'] });
       setShowCreate(false);
-      setCreateForm({ name: '', description: '', role: 'CEO', deadline: '', subtasks: [] });
+      setCreateForm({ name: '', description: '', role: 'CEO', deadline: '' });
+      setCreateSubtasks([]);
     },
   });
   const update = useMutation({
@@ -148,13 +183,9 @@ export default function ProjectsPage() {
 
   const toggleNode = (project: any, i: number, j?: number, k?: number) => {
     const tasks = normalize(project.subtasks);
-    if (k !== undefined && j !== undefined) {
-      tasks[i].children[j].children[k].completed = !tasks[i].children[j].children[k].completed;
-    } else if (j !== undefined) {
-      tasks[i].children[j].completed = !tasks[i].children[j].completed;
-    } else {
-      tasks[i].completed = !tasks[i].completed;
-    }
+    if (k !== undefined && j !== undefined) tasks[i].children[j].children[k].completed = !tasks[i].children[j].children[k].completed;
+    else if (j !== undefined) tasks[i].children[j].completed = !tasks[i].children[j].completed;
+    else tasks[i].completed = !tasks[i].completed;
     update.mutate({ id: project.id, subtasks: tasks });
   };
 
@@ -269,11 +300,11 @@ export default function ProjectsPage() {
             <Input type="date" value={createForm.deadline} onChange={e => setCreateForm(p => ({ ...p, deadline: e.target.value }))} />
           </div>
           <div>
-            <label className="text-xs text-slate-400 block mb-1.5">Subtasks: Utama → Sub → Sub-sub</label>
-            <SubtaskEditor value={createForm.subtasks} onChange={v => setCreateForm(p => ({ ...p, subtasks: v }))} />
+            <label className="text-xs text-slate-400 block mb-1.5">Subtasks — Enter: next, Tab: jorokin, Shift+Tab: balik</label>
+            <SubtaskEditor key={showCreate ? 'create-open' : 'create-closed'} value={createSubtasks} onChange={setCreateSubtasks} />
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => { if (!createForm.name.trim()) return; create.mutate(createForm); }} disabled={create.isPending} className="flex-1">
+            <Button onClick={() => { if (!createForm.name.trim()) return; create.mutate({ ...createForm, subtasks: createSubtasks }); }} disabled={create.isPending} className="flex-1">
               {create.isPending ? 'Membuat...' : 'Buat Proyek'}
             </Button>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Batal</Button>
@@ -295,8 +326,8 @@ export default function ProjectsPage() {
               <Input type="date" value={editForm.deadline || ''} onChange={e => setEditForm((p: any) => ({ ...p, deadline: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs text-slate-400 block mb-1.5">Subtasks: Utama → Sub → Sub-sub</label>
-              <SubtaskEditor value={editSubtasks} onChange={setEditSubtasks} />
+              <label className="text-xs text-slate-400 block mb-1.5">Subtasks — Enter: next, Tab: jorokin, Shift+Tab: balik</label>
+              <SubtaskEditor key={editItem.id} value={editSubtasks} onChange={setEditSubtasks} />
             </div>
             <div className="flex gap-2">
               <Button onClick={() => update.mutate({ id: editItem.id, ...editForm, subtasks: editSubtasks })} disabled={update.isPending} className="flex-1">

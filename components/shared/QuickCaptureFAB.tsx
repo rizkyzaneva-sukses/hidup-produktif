@@ -70,7 +70,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
     setSaving(false);
     setSaved(true);
     setInput('');
-    setTimeout(() => { setSaved(false); setOpen(false); }, 800);
+    setTimeout(() => setSaved(false), 1200);
   };
 
   const insertTag = (tag: string) => {
