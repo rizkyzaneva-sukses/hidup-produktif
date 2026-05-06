@@ -13,8 +13,9 @@ interface Task { id: string; title: string; role: string; priority: string; work
 function TaskForm({ task, onSave, onCancel, customRoles }: { task?: Task; onSave: (data: any) => void; onCancel: () => void; customRoles: string[] }) {
   const allRoles = [...ROLES, ...customRoles];
   const [form, setForm] = useState({ title: task?.title || '', role: task?.role || 'CEO', priority: task?.priority || 'Sedang', work_type: task?.work_type || 'Admin', due_date: task?.due_date || '', notes: task?.notes || '' });
+  const submit = () => { if (!form.title.trim()) return; onSave(form); };
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" onKeyDown={e => { if (e.ctrlKey && e.key === 'Enter') submit(); }}>
       <Input placeholder="Judul task *" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} />
       <div className="grid grid-cols-2 gap-2">
         <Select options={allRoles.map(r => ({ value: r, label: r }))} value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} />
@@ -24,7 +25,7 @@ function TaskForm({ task, onSave, onCancel, customRoles }: { task?: Task; onSave
       </div>
       <Textarea placeholder="Notes (opsional)" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
       <div className="flex gap-2">
-        <Button onClick={() => { if (!form.title.trim()) return; onSave(form); }} className="flex-1">Simpan</Button>
+        <Button onClick={submit} className="flex-1">Simpan <span className="ml-1 text-[10px] opacity-50">Ctrl+↵</span></Button>
         <Button variant="outline" onClick={onCancel}>Batal</Button>
       </div>
     </div>

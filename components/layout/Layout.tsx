@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { QuickCaptureFAB } from '@/components/shared/QuickCaptureFAB';
+import { getEffectiveKey, matchesKeyCombo } from '@/lib/shortcuts';
 
 const NAV = [
   { href: '/', icon: '🏠', label: 'Beranda' },
@@ -63,10 +64,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   useEffect(() => {
+    const NAV_MAP: Record<string, string> = {
+      'nav-home': '/', 'nav-sprint': '/sprint', 'nav-tasks': '/tasks',
+      'nav-habits': '/habits', 'nav-focus': '/focus', 'nav-ideas': '/ideas',
+      'nav-projects': '/projects', 'nav-learning': '/learning',
+    };
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
-        e.preventDefault();
-        window.location.href = '/search';
+      if (matchesKeyCombo(e, getEffectiveKey('search'))) {
+        e.preventDefault(); window.location.href = '/search'; return;
+      }
+      for (const [id, href] of Object.entries(NAV_MAP)) {
+        if (matchesKeyCombo(e, getEffectiveKey(id))) {
+          e.preventDefault(); window.location.href = href; return;
+        }
       }
     };
     window.addEventListener('keydown', handler);

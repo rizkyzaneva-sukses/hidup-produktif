@@ -289,7 +289,7 @@ export default function ProjectsPage() {
 
       {/* Create dialog */}
       <Dialog open={showCreate} onClose={() => setShowCreate(false)} title="➕ Buat Proyek">
-        <div className="space-y-3">
+        <div className="space-y-3" onKeyDown={e => { if (e.ctrlKey && e.key === 'Enter' && createForm.name.trim() && !create.isPending) create.mutate({ ...createForm, subtasks: createSubtasks }); }}>
           <Input value={createForm.name} onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))} placeholder="Nama proyek *" />
           <Textarea value={createForm.description} onChange={e => setCreateForm(p => ({ ...p, description: e.target.value }))} rows={2} placeholder="Deskripsi (opsional)" />
           <div className="grid grid-cols-2 gap-2">
@@ -305,7 +305,7 @@ export default function ProjectsPage() {
           </div>
           <div className="flex gap-2">
             <Button onClick={() => { if (!createForm.name.trim()) return; create.mutate({ ...createForm, subtasks: createSubtasks }); }} disabled={create.isPending} className="flex-1">
-              {create.isPending ? 'Membuat...' : 'Buat Proyek'}
+              {create.isPending ? 'Membuat...' : 'Buat Proyek'} <span className="ml-1 text-[10px] opacity-50">Ctrl+↵</span>
             </Button>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Batal</Button>
           </div>
@@ -315,7 +315,7 @@ export default function ProjectsPage() {
       {/* Edit dialog */}
       <Dialog open={!!editItem} onClose={() => setEditItem(null)} title="✏️ Edit Proyek">
         {editItem && (
-          <div className="space-y-3">
+          <div className="space-y-3" onKeyDown={e => { if (e.ctrlKey && e.key === 'Enter' && !update.isPending) update.mutate({ id: editItem.id, ...editForm, subtasks: editSubtasks }); }}>
             <Input value={editForm.name} onChange={e => setEditForm((p: any) => ({ ...p, name: e.target.value }))} placeholder="Nama proyek" />
             <Textarea value={editForm.description || ''} onChange={e => setEditForm((p: any) => ({ ...p, description: e.target.value }))} rows={2} placeholder="Deskripsi" />
             <div className="grid grid-cols-2 gap-2">
@@ -331,7 +331,7 @@ export default function ProjectsPage() {
             </div>
             <div className="flex gap-2">
               <Button onClick={() => update.mutate({ id: editItem.id, ...editForm, subtasks: editSubtasks })} disabled={update.isPending} className="flex-1">
-                {update.isPending ? 'Menyimpan...' : 'Simpan'}
+                {update.isPending ? 'Menyimpan...' : 'Simpan'} <span className="ml-1 text-[10px] opacity-50">Ctrl+↵</span>
               </Button>
               <Button variant="outline" onClick={() => setEditItem(null)}>Batal</Button>
             </div>
