@@ -1,6 +1,6 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ROLES, PRIORITIES, WORK_TYPES } from '@/lib/constants';
 import { isOverdue, isTodayDate, isFutureDate, formatDateShort } from '@/lib/utils';
 import { Card, CardContent, Button, Input, Select, Dialog, Textarea, EmptyState, Badge } from '@/components/ui';
@@ -40,6 +40,8 @@ export default function TasksPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [quickInput, setQuickInput] = useState('');
+  const [quickDropdown, setQuickDropdown] = useState(false);
+  const quickRef = useRef<HTMLInputElement>(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: () => fetcher('/api/tasks') });
@@ -72,9 +74,36 @@ export default function TasksPage() {
 
   const quickAdd = async () => {
     if (!quickInput.trim()) return;
-    await createTask.mutateAsync({ title: quickInput.trim(), role: 'CEO', priority: 'Sedang', work_type: 'Admin' });
+    let title = quickInput.trim();
+    let role = 'CEO';
+    const roleMatch = title.match(/@(\w+)/);
+    if (roleMatch) {
+      const matched = allRoles.find(r => r.toLowerCase() === roleMatch[1].toLowerCase());
+      if (matched) role = matched;
+      title = title.replace(roleMatch[0], '').trim();
+    }
+    await createTask.mutateAsync({ title, role, priority: 'Sedang', work_type: 'Admin' });
     setQuickInput('');
+    setQuickDropdown(false);
   };
+
+  const handleQuickChange = (val: string) => {
+    setQuickInput(val);
+    const last = val.split(' ').pop() || '';
+    setQuickDropdown(last.startsWith('@'));
+  };
+
+  const insertQuickRole = (role: string) => {
+    const parts = quickInput.split(' ');
+    parts[parts.length - 1] = `@${role.toLowerCase()}`;
+    setQuickInput(parts.join(' ') + ' ');
+    setQuickDropdown(false);
+    quickRef.current?.focus();
+  };
+
+  const quickLast = quickInput.split(' ').pop() || '';
+  const quickRoleQ = quickLast.startsWith('@') ? quickLast.slice(1).toLowerCase() : '';
+  const quickRoleOpts = allRoles.filter(r => !quickRoleQ || r.toLowerCase().startsWith(quickRoleQ));
 
   const hasActiveFilters = filterRole || filterPriority || filterWorkType;
 
@@ -131,9 +160,24 @@ export default function TasksPage() {
       </div>
 
       {/* Quick add */}
-      <div className="flex gap-2">
-        <Input placeholder="Tambah task cepat... (Enter)" value={quickInput} onChange={e => setQuickInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && quickAdd()} />
-        <Button onClick={quickAdd} size="sm" className="flex-shrink-0">+</Button>
+      <div className="relative">
+        <div className="flex gap-2">
+          <Input ref={quickRef} placeholder="Tambah task cepat... @role (Enter)" value={quickInput} onChange={e => handleQuickChange(e.target.value)} onKeyDown={e => {
+            if (e.key === 'Enter' && !quickDropdown) quickAdd();
+            if (e.key === 'Tab' && quickDropdown) { e.preventDefault(); if (quickRoleOpts[0]) insertQuickRole(quickRoleOpts[0].toLowerCase()); }
+            if (e.key === 'Escape') setQuickDropdown(false);
+          }} />
+          <Button onClick={quickAdd} size="sm" className="flex-shrink-0">+</Button>
+        </div>
+        {quickDropdown && quickRoleOpts.length > 0 && (
+          <div className="absolute z-20 top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-xl">
+            {quickRoleOpts.map(r => (
+              <button key={r} onClick={() => insertQuickRole(r.toLowerCase())} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors">
+                @{r.toLowerCase()}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Filters - collapsible on mobile */}

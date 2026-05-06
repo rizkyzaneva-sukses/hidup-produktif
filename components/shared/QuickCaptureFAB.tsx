@@ -109,8 +109,16 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
                   if (e.key === 'Enter' && !dropdown) handleSave();
                   if (e.key === 'Tab' && dropdown) {
                     e.preventDefault();
-                    const opts = dropdown === 'role' ? allRoles.map(r => `@${r.toLowerCase()}`) : IDEA_CATEGORIES.map(c => `#${c.toLowerCase().replace(' ', '')}`);
-                    if (opts[0]) insertTag(opts[0]);
+                    const last2 = input.split(' ').pop() || '';
+                    if (dropdown === 'role') {
+                      const q2 = last2.startsWith('@') ? last2.slice(1).toLowerCase() : '';
+                      const first = allRoles.find(r => !q2 || r.toLowerCase().startsWith(q2));
+                      if (first) insertTag(`@${first.toLowerCase()}`);
+                    } else {
+                      const q2 = last2.startsWith('#') ? last2.slice(1).toLowerCase() : '';
+                      const first = IDEA_CATEGORIES.find(c => !q2 || c.toLowerCase().replace(' ', '').startsWith(q2));
+                      if (first) insertTag(`#${first.toLowerCase().replace(' ', '')}`);
+                    }
                   }
                 }}
                 placeholder="Tulis ide... @role #kategori (opsional)"
@@ -119,24 +127,34 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 hidden sm:inline">Enter ↵</span>
             </div>
 
-            {dropdown === 'role' && (
-              <div className="mt-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
-                {allRoles.map(r => (
-                  <button key={r} onClick={() => insertTag(`@${r.toLowerCase()}`)} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 active:bg-slate-600 transition-colors">
-                    @{r.toLowerCase()}
-                  </button>
-                ))}
-              </div>
-            )}
-            {dropdown === 'cat' && (
-              <div className="mt-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
-                {IDEA_CATEGORIES.map(c => (
-                  <button key={c} onClick={() => insertTag(`#${c.toLowerCase().replace(' ', '')}`)} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 active:bg-slate-600 transition-colors">
-                    #{c.toLowerCase()}
-                  </button>
-                ))}
-              </div>
-            )}
+            {dropdown === 'role' && (() => {
+              const last = input.split(' ').pop() || '';
+              const q = last.startsWith('@') ? last.slice(1).toLowerCase() : '';
+              const opts = allRoles.filter(r => !q || r.toLowerCase().startsWith(q));
+              return opts.length > 0 ? (
+                <div className="mt-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                  {opts.map(r => (
+                    <button key={r} onClick={() => insertTag(`@${r.toLowerCase()}`)} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 active:bg-slate-600 transition-colors">
+                      @{r.toLowerCase()}
+                    </button>
+                  ))}
+                </div>
+              ) : null;
+            })()}
+            {dropdown === 'cat' && (() => {
+              const last = input.split(' ').pop() || '';
+              const q = last.startsWith('#') ? last.slice(1).toLowerCase() : '';
+              const opts = IDEA_CATEGORIES.filter(c => !q || c.toLowerCase().replace(' ', '').startsWith(q));
+              return opts.length > 0 ? (
+                <div className="mt-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                  {opts.map(c => (
+                    <button key={c} onClick={() => insertTag(`#${c.toLowerCase().replace(' ', '')}`)} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 active:bg-slate-600 transition-colors">
+                      #{c.toLowerCase()}
+                    </button>
+                  ))}
+                </div>
+              ) : null;
+            })()}
 
             <div className="flex gap-2 mt-3">
               <Button onClick={handleSave} disabled={saving || !input.trim()} className="flex-1">
