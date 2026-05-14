@@ -295,6 +295,11 @@ export default function LearningPage() {
   };
 
   const totalMinutes = logs.reduce((s: number, l: any) => s + (l.duration_minutes || 0), 0);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const totalMins = totalMinutes % 60;
+  
+  const finishedCount = logs.filter((l: any) => l.finished).length;
+  const finishedPercent = logs.length > 0 ? Math.round((finishedCount / logs.length) * 100) : 0;
 
   const openEdit = (log: any) => {
     setEditItem({
@@ -311,92 +316,138 @@ export default function LearningPage() {
 
   const hasActiveFilters = searchQuery || filterCategory || filterType;
 
+  const typeBorderColors: Record<string, string> = {
+    Buku: 'bg-blue-500',
+    Podcast: 'bg-purple-500',
+    Video: 'bg-yellow-500',
+    Artikel: 'bg-slate-500'
+  };
+
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white">📚 Log Belajar</h1>
-          <p className="text-slate-400 text-sm">{logs.length} entri{hasActiveFilters ? ' (filtered)' : ' total'}</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">📚 Log Belajar</h1>
+          <p className="text-slate-400 text-sm mt-2 max-w-lg">
+            Lacak dan kelola semua progres belajar Anda. Lihat statistik, filter berdasarkan kategori, dan catat insight berharga. {logs.length > 0 && <span className="text-slate-500">— {logs.length} entri{hasActiveFilters ? ' (filtered)' : ' total'}</span>}
+          </p>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setShowCategoryManager(true)}>📂</Button>
-          <Button size="sm" onClick={() => setShowForm(true)}>+ Log Baru</Button>
+        <div className="flex gap-2 shrink-0">
+          <Button size="md" variant="secondary" onClick={() => setShowCategoryManager(true)}>📂 Kategori</Button>
+          <Button size="md" onClick={() => setShowForm(true)}>+ Log Baru</Button>
         </div>
       </div>
 
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        {[
+          { label: 'Streak Belajar', value: `${getStreak()} hari`, icon: '🔥', desc: 'Berturut-turut' },
+          { label: 'Total Waktu', value: totalHours > 0 ? `${totalHours}j ${totalMins > 0 ? `${totalMins}m` : ''}`.trim() : `${totalMins}m`, icon: '⏱', desc: 'Durasi belajar' },
+          { label: 'Selesai', value: `${finishedCount}`, icon: '✅', desc: `${finishedPercent}% dari total` },
+        ].map(s => (
+          <Card key={s.label}>
+            <div className="p-4 flex items-center sm:flex-col sm:justify-center sm:text-center gap-4 sm:gap-0">
+              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-slate-700/40 flex items-center justify-center text-xl sm:text-2xl sm:mb-3 shrink-0">{s.icon}</div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold text-white leading-none">{s.value}</p>
+                <div className="flex sm:flex-col items-center sm:items-center gap-2 sm:gap-0 mt-1 sm:mt-1.5">
+                  <p className="text-sm font-medium text-slate-300">{s.label}</p>
+                  <p className="text-xs text-slate-500 hidden sm:block mt-0.5">{s.desc}</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
       {/* Search & Filters */}
-      <div className="space-y-2">
-        <Input
-          placeholder="🔍 Cari judul atau insight..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-        />
-        <div className="flex gap-2 flex-wrap">
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex-1 relative">
+          <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <Input
+            placeholder="Cari judul atau insight..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-9 bg-slate-800/80 border-slate-700/60 shadow-sm"
+          />
+        </div>
+        <div className="flex gap-2 shrink-0 overflow-x-auto pb-1 md:pb-0 hide-scrollbar">
           <Select
-            options={[{ value: '', label: '📂 Semua Kategori' }, ...categories.map((c: any) => ({ value: c.id, label: `${c.emoji} ${c.name}` }))]}
+            options={[{ value: '', label: 'Semua Kategori' }, ...categories.map((c: any) => ({ value: c.id, label: `${c.emoji} ${c.name}` }))]}
             value={filterCategory}
             onChange={e => setFilterCategory(e.target.value)}
-            className="flex-1 min-w-[140px]"
+            className="w-[140px] md:w-[160px] shrink-0 bg-slate-800/80 border-slate-700/60 shadow-sm"
           />
           <Select
-            options={[{ value: '', label: '📖 Semua Tipe' }, ...LEARNING_TYPES.map(t => ({ value: t, label: t }))]}
+            options={[{ value: '', label: 'Semua Tipe' }, ...LEARNING_TYPES.map(t => ({ value: t, label: t }))]}
             value={filterType}
             onChange={e => setFilterType(e.target.value)}
-            className="flex-1 min-w-[120px]"
+            className="w-[120px] md:w-[140px] shrink-0 bg-slate-800/80 border-slate-700/60 shadow-sm"
           />
           {hasActiveFilters && (
-            <Button size="sm" variant="ghost" onClick={() => { setSearchQuery(''); setFilterCategory(''); setFilterType(''); }} className="text-slate-400 hover:text-white">
-              ✕ Reset
+            <Button size="md" variant="ghost" onClick={() => { setSearchQuery(''); setFilterCategory(''); setFilterType(''); }} className="text-slate-400 hover:text-white shrink-0 px-3">
+              Reset
             </Button>
           )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: 'Streak', value: `${getStreak()} hari`, icon: '🔥' },
-          { label: 'Total Jam', value: `${Math.round(totalMinutes / 60)}j`, icon: '⏱' },
-        ].map(s => (
-          <Card key={s.label}>
-            <CardContent className="p-3 text-center">
-              <p className="text-2xl">{s.icon}</p>
-              <p className="text-lg font-bold text-white">{s.value}</p>
-              <p className="text-xs text-slate-400">{s.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Logs list */}
-      {logs.length === 0 ? <EmptyState icon="📚" title={hasActiveFilters ? 'Tidak ada hasil' : 'Belum ada log belajar'} /> : (
-        <div className="space-y-2">
+      {logs.length === 0 ? <EmptyState icon="📚" title={hasActiveFilters ? 'Tidak ada hasil' : 'Belum ada log belajar'} desc="Coba ubah filter atau tambah log baru" /> : (
+        <div className="space-y-4">
           {logs.map((log: any) => (
-            <div key={log.id} className="p-3 rounded-xl border border-slate-700/50 bg-slate-800/40">
-              <div className="flex items-start gap-3">
+            <div key={log.id} className={`group relative p-5 pl-6 rounded-2xl border border-slate-700/50 bg-slate-800/40 hover:bg-slate-800/60 transition-all overflow-hidden shadow-sm hover:shadow-md ${log.finished ? 'opacity-60' : ''}`}>
+              <div className={`absolute left-0 top-0 bottom-0 w-1 ${typeBorderColors[log.type] || 'bg-slate-500'} opacity-80`} />
+              
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-sm font-medium text-white">{log.title}</p>
-                    <Badge variant={log.type === 'Buku' ? 'default' : log.type === 'Podcast' ? 'purple' : log.type === 'Video' ? 'warning' : 'slate'}>{log.type}</Badge>
-                    {log.category && (
-                      <Badge variant="slate" className="cursor-pointer" onClick={() => setFilterCategory(log.category_id)}>
-                        {log.category.emoji} {log.category.name}
-                      </Badge>
-                    )}
-                    {log.finished && <Badge variant="success">✅ Selesai</Badge>}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="w-full">
+                      <div className="flex items-center gap-2 flex-wrap mb-2.5">
+                        <h3 className={`text-lg font-semibold tracking-tight ${log.finished ? 'text-slate-400 line-through decoration-slate-600' : 'text-white'}`}>{log.title}</h3>
+                        {log.finished && <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500/20 text-green-400 text-[10px]" title="Selesai">✓</span>}
+                      </div>
+                      
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={log.type === 'Buku' ? 'default' : log.type === 'Podcast' ? 'purple' : log.type === 'Video' ? 'warning' : 'slate'}>{log.type}</Badge>
+                          {log.category && (
+                            <Badge variant="slate" className="cursor-pointer hover:bg-slate-700/50 transition-colors" onClick={() => setFilterCategory(log.category_id)}>
+                              {log.category.emoji} {log.category.name}
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-xs font-medium text-slate-400 border-l border-slate-700/60 pl-4">
+                          {log.log_date && (
+                            <span className="flex items-center gap-1.5" title="Tanggal">
+                              <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              {log.log_date}
+                            </span>
+                          )}
+                          {log.duration_minutes > 0 && (
+                            <span className="flex items-center gap-1.5" title="Durasi">
+                              <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              {Math.floor(log.duration_minutes / 60) > 0 ? `${Math.floor(log.duration_minutes / 60)}j ` : ''}{log.duration_minutes % 60 > 0 || Math.floor(log.duration_minutes / 60) === 0 ? `${log.duration_minutes % 60}m` : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-3 mt-0.5">
-                    {log.log_date && <span className="text-xs text-slate-500">📅 {log.log_date}</span>}
-                    {log.duration_minutes && <span className="text-xs text-slate-500">⏱ {log.duration_minutes} mnt</span>}
-                  </div>
-                  {log.insight && <RenderInsight text={log.insight} />}
+                  {log.insight && <div className="mt-2"><RenderInsight text={log.insight} /></div>}
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
-                  <Button size="icon" variant="ghost" onClick={() => openEdit(log)} className="h-7 w-7">✏️</Button>
-                  <Button size="icon" variant="ghost" onClick={() => update.mutate({ id: log.id, finished: !log.finished })} className="h-7 w-7">
-                    {log.finished ? '📖' : '✅'}
+                
+                <div className="flex sm:flex-col gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity mt-3 sm:mt-0 pt-3 sm:pt-0 border-t border-slate-700/50 sm:border-t-0 shrink-0">
+                  <Button size="icon" variant="ghost" onClick={() => update.mutate({ id: log.id, finished: !log.finished })} className={`h-8 w-8 rounded-lg ${log.finished ? 'text-slate-400 hover:text-white' : 'text-green-400 hover:text-green-300 hover:bg-green-400/10'}`} title={log.finished ? "Tandai belum selesai" : "Tandai selesai"}>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => del.mutate(log.id)} className="h-7 w-7 text-red-400">🗑</Button>
+                  <Button size="icon" variant="ghost" onClick={() => openEdit(log)} className="h-8 w-8 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-400/10" title="Edit">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  </Button>
+                  <Button size="icon" variant="ghost" onClick={() => del.mutate(log.id)} className="h-8 w-8 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-400/10" title="Hapus">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </Button>
                 </div>
               </div>
             </div>
