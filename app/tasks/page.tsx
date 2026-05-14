@@ -29,7 +29,10 @@ function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Ta
         <Select options={allRoles.map(r => ({ value: r, label: r }))} value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} />
         <Select options={PRIORITIES.map(p => ({ value: p, label: p }))} value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value }))} />
         <Select options={WORK_TYPES.map(w => ({ value: w, label: w }))} value={form.work_type} onChange={e => setForm(p => ({ ...p, work_type: e.target.value }))} />
-        <Input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} />
+        <div className="relative">
+          <Input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} />
+          {!form.due_date && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">📅 Due date</span>}
+        </div>
       </div>
       <select
         value={form.project_id}

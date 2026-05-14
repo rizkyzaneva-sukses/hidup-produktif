@@ -12,8 +12,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.priority !== undefined) data.priority = body.priority;
     if (body.work_type !== undefined) data.workType = body.work_type;
     if (body.completed !== undefined) data.completed = body.completed;
-    if (body.notes !== undefined) data.notes = body.notes;
-    if (body.due_date !== undefined) data.dueDate = body.due_date;
+    if (body.notes !== undefined) data.notes = body.notes || null;
+    if (body.due_date !== undefined) data.dueDate = body.due_date || null;
     if (body.project_id !== undefined) data.projectId = body.project_id || null;
     
     const task = await prisma.task.update({
