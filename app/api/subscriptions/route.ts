@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+function mapSub(s: any) {
+  return {
+    id: s.id,
+    nama: s.nama,
+    nominal: s.nominal,
+    tanggal_renewal: s.tanggalRenewal,
+    kategori: s.kategori,
+    status: s.status,
+    created_at: s.createdAt,
+    updated_at: s.updatedAt,
+  };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -13,14 +26,14 @@ export async function GET(req: NextRequest) {
       const subs = await prisma.subscription.findMany({
         where: { status: 'Aktif', tanggalRenewal: targetStr },
       });
-      return NextResponse.json(subs);
+      return NextResponse.json(subs.map(mapSub));
     }
 
     const subs = await prisma.subscription.findMany({
       orderBy: { tanggalRenewal: 'asc' },
       take: 200,
     });
-    return NextResponse.json(subs);
+    return NextResponse.json(subs.map(mapSub));
   } catch (error: any) {
     console.error('[API] GET /api/subscriptions error:', error?.message);
     return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
@@ -39,7 +52,7 @@ export async function POST(req: NextRequest) {
         status: body.status || 'Aktif',
       },
     });
-    return NextResponse.json(sub);
+    return NextResponse.json(mapSub(sub));
   } catch (error: any) {
     console.error('[API] POST /api/subscriptions error:', error?.message);
     return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
