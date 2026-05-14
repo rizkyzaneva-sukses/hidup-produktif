@@ -2,6 +2,7 @@ import { prisma } from './prisma';
 import { sendTelegram, formatRupiah } from './telegram';
 
 let cronStarted = false;
+let lastRunDate = '';
 
 export function startCron() {
   if (cronStarted) return;
@@ -13,20 +14,59 @@ export function startCron() {
   try {
     const cron = require('node-cron');
 
-    // Run every day at 07:00 WIB (UTC+7 = 00:00 UTC)
-    cron.schedule('0 0 * * *', async () => {
-      await runDailyNotifications();
-    }, { timezone: 'Asia/Jakarta' });
+    // Check every minute if it's time to send notifications
+    cron.schedule('* * * * *', async () => {
+      try {
+        await checkAndRunNotifications();
+      } catch (e) {
+        console.error('[Cron] Error in notification check:', e);
+      }
+    });
 
-    console.log('[Cron] Daily notification job scheduled at 07:00 WIB');
+    console.log('[Cron] Notification scheduler started (checks every minute)');
   } catch (e) {
     console.error('[Cron] Failed to start:', e);
   }
 }
 
+async function getNotificationTime(): Promise<string> {
+  try {
+    const config = await prisma.appConfig.findUnique({ where: { key: 'NOTIFICATION_TIME' } });
+    return config?.value || '07:00';
+  } catch {
+    return '07:00';
+  }
+}
+
+async function checkAndRunNotifications() {
+  const now = new Date();
+  // Convert to WIB (UTC+7)
+  const wibOffset = 7 * 60; // minutes
+  const wibTime = new Date(now.getTime() + (wibOffset + now.getTimezoneOffset()) * 60000);
+  const currentHour = wibTime.getHours().toString().padStart(2, '0');
+  const currentMinute = wibTime.getMinutes().toString().padStart(2, '0');
+  const currentTime = `${currentHour}:${currentMinute}`;
+  const currentDate = wibTime.toISOString().split('T')[0];
+
+  // Get configured notification time
+  const notifTime = await getNotificationTime();
+
+  // Only run once per day at the configured time
+  if (currentTime === notifTime && lastRunDate !== currentDate) {
+    lastRunDate = currentDate;
+    console.log(`[Cron] Running daily notifications at ${currentTime} WIB`);
+    await runDailyNotifications();
+  }
+}
+
 export async function runDailyNotifications(): Promise<string[]> {
   const messages: string[] = [];
-  const today = new Date().toISOString().split('T')[0];
+  
+  // Get current date in WIB
+  const now = new Date();
+  const wibOffset = 7 * 60;
+  const wibTime = new Date(now.getTime() + (wibOffset + now.getTimezoneOffset()) * 60000);
+  const today = wibTime.toISOString().split('T')[0];
   const todayDate = new Date(today);
   const dayOfWeek = todayDate.getDay().toString();
   const dayOfMonth = today.split('-')[2];
@@ -55,7 +95,7 @@ export async function runDailyNotifications(): Promise<string[]> {
   }
 
   // 2. Subscriptions due in 7 days
-  const targetDate = new Date();
+  const targetDate = new Date(wibTime);
   targetDate.setDate(targetDate.getDate() + 7);
   const target = targetDate.toISOString().split('T')[0];
 
@@ -67,6 +107,13 @@ export async function runDailyNotifications(): Promise<string[]> {
     const msg = `⚠️ <b>Subscription Renewal</b> dalam 7 hari!\n📦 ${s.nama}\n💰 ${formatRupiah(s.nominal)}/bln\n🗓 Renewal: ${s.tanggalRenewal}\n\nJangan lupa cancel jika tidak perlu lagi.`;
     const result = await sendTelegram(msg);
     messages.push(result.ok ? `✅ Sub sent: ${s.nama}` : `❌ Failed: ${s.nama} — ${result.error}`);
+  }
+
+  // 3. Summary message if nothing to send
+  if (messages.length === 0) {
+    const summaryMsg = `☀️ <b>Selamat Pagi!</b>\n\n✅ Tidak ada reminder untuk hari ini.\n📦 Tidak ada subscription yang perlu diperbarui.\n\n💪 Semangat produktif hari ini!`;
+    const result = await sendTelegram(summaryMsg);
+    messages.push(result.ok ? '✅ Morning greeting sent' : `❌ Failed to send greeting: ${result.error}`);
   }
 
   return messages;

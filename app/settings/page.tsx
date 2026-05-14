@@ -136,14 +136,17 @@ export default function SettingsPage() {
   const [tab, setTab] = useState<'config' | 'shortcuts'>('config');
   const [token, setToken] = useState('');
   const [chatId, setChatId] = useState('');
+  const [notifTime, setNotifTime] = useState('07:00');
   const [testResult, setTestResult] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [cronResult, setCronResult] = useState<string | null>(null);
 
   const { data: config } = useQuery({ queryKey: ['config'], queryFn: () => fetcher('/api/config') });
 
   useEffect(() => {
     if (config?.TELEGRAM_CHAT_ID) setChatId(config.TELEGRAM_CHAT_ID);
+    if (config?.NOTIFICATION_TIME) setNotifTime(config.NOTIFICATION_TIME);
   }, [config]);
 
   const saveConfig = useMutation({
@@ -152,7 +155,7 @@ export default function SettingsPage() {
   });
 
   const handleSave = () => {
-    const data: any = { TELEGRAM_CHAT_ID: chatId };
+    const data: any = { TELEGRAM_CHAT_ID: chatId, NOTIFICATION_TIME: notifTime };
     if (token) data.TELEGRAM_BOT_TOKEN = token;
     saveConfig.mutate(data);
   };
@@ -166,9 +169,13 @@ export default function SettingsPage() {
   };
 
   const runCron = async () => {
+    setCronResult(null);
     const res = await fetch('/api/telegram-test');
     const data = await res.json();
-    alert(data.messages?.join('\n') || 'Tidak ada notifikasi untuk dikirim hari ini.');
+    const result = data.messages?.length > 0 
+      ? data.messages.join('\n') 
+      : '✅ Notifikasi terkirim (atau tidak ada yang perlu dikirim).';
+    setCronResult(result);
   };
 
   const TABS = [
@@ -242,10 +249,32 @@ export default function SettingsPage() {
                 <span className="text-xl">⏰</span>
                 <h2 className="font-semibold text-white">Notifikasi Harian</h2>
               </div>
-              <p className="text-slate-400 text-sm mb-3">
-                Cron job berjalan otomatis setiap pagi 07:00 WIB untuk mengirim reminder dan alert subscription H-7.
+              <p className="text-slate-400 text-sm mb-4">
+                Notifikasi otomatis dikirim setiap hari pada jam yang kamu tentukan (WIB). Berisi reminder aktif dan alert subscription H-7.
               </p>
-              <Button variant="outline" onClick={runCron}>🔔 Jalankan Sekarang (Manual)</Button>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-slate-400 block mb-1.5">Jam Notifikasi (WIB)</label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="time"
+                      value={notifTime}
+                      onChange={e => setNotifTime(e.target.value)}
+                      className="w-32"
+                    />
+                    <span className="text-xs text-slate-500">Saat ini: <span className="text-white font-medium">{notifTime} WIB</span></span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">Perubahan aktif setelah klik "Simpan Konfigurasi" di atas</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={runCron}>🔔 Jalankan Sekarang (Manual)</Button>
+                </div>
+                {cronResult && (
+                  <div className="p-3 rounded-lg text-sm bg-slate-700/50 text-slate-300 border border-slate-600/50 whitespace-pre-line">
+                    {cronResult}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
