@@ -1,6 +1,6 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { format, subDays, startOfMonth } from 'date-fns';
 import { LEARNING_TYPES } from '@/lib/constants';
 import { todayStr } from '@/lib/utils';
@@ -39,7 +39,6 @@ function InsightToolbar({ textareaRef, value, onChange }: { textareaRef: React.R
     const after = value.substring(end);
 
     if (selected.includes('\n')) {
-      // Multi-line: add prefix to each line
       const lines = selected.split('\n');
       const prefixed = lines.map((line, i) => {
         if (prefix === '1. ') return `${i + 1}. ${line}`;
@@ -47,7 +46,6 @@ function InsightToolbar({ textareaRef, value, onChange }: { textareaRef: React.R
       }).join('\n');
       onChange(`${before}${prefixed}${after}`);
     } else {
-      // Single line: add prefix at line start
       const lineStart = before.lastIndexOf('\n') + 1;
       const beforeLine = value.substring(0, lineStart);
       const currentLine = value.substring(lineStart, end);
@@ -108,7 +106,6 @@ function RenderInsight({ text }: { text: string }) {
   };
 
   const formatInline = (line: string): React.ReactNode => {
-    // Bold
     let result: React.ReactNode[] = [];
     const parts = line.split(/(\*\*[^*]+\*\*|_[^_]+_)/g);
     parts.forEach((part, i) => {
@@ -126,28 +123,24 @@ function RenderInsight({ text }: { text: string }) {
   lines.forEach((line, idx) => {
     const trimmed = line.trim();
 
-    // Separator
     if (trimmed === '---' || trimmed === '***') {
       flushList();
       elements.push(<hr key={idx} className="border-slate-600 my-1" />);
       return;
     }
 
-    // Heading
     if (trimmed.startsWith('### ')) {
       flushList();
       elements.push(<p key={idx} className="text-xs font-semibold text-white mt-1">{formatInline(trimmed.slice(4))}</p>);
       return;
     }
 
-    // Quote
     if (trimmed.startsWith('> ')) {
       flushList();
       elements.push(<blockquote key={idx} className="border-l-2 border-blue-500/50 pl-2 text-xs text-slate-400 italic">{formatInline(trimmed.slice(2))}</blockquote>);
       return;
     }
 
-    // Checklist
     if (trimmed.startsWith('- [x] ') || trimmed.startsWith('- [ ] ')) {
       const checked = trimmed.startsWith('- [x] ');
       const content = trimmed.slice(6);
@@ -161,7 +154,6 @@ function RenderInsight({ text }: { text: string }) {
       return;
     }
 
-    // Bullet list
     if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
       if (!listItems || listItems.type !== 'ul') {
         flushList();
@@ -171,7 +163,6 @@ function RenderInsight({ text }: { text: string }) {
       return;
     }
 
-    // Numbered list
     const olMatch = trimmed.match(/^\d+\.\s+(.*)$/);
     if (olMatch) {
       if (!listItems || listItems.type !== 'ol') {
@@ -182,7 +173,6 @@ function RenderInsight({ text }: { text: string }) {
       return;
     }
 
-    // Regular text
     flushList();
     if (trimmed === '') {
       elements.push(<div key={idx} className="h-1" />);
@@ -196,29 +186,102 @@ function RenderInsight({ text }: { text: string }) {
   return <div className="space-y-1 mt-1.5 bg-slate-700/40 rounded-lg px-2.5 py-2">{elements}</div>;
 }
 
+// ── Category Manager Dialog ──────────────────────────────────────────────────
+function CategoryManager({ open, onClose, categories, onCreate, onDelete }: {
+  open: boolean;
+  onClose: () => void;
+  categories: any[];
+  onCreate: (data: { name: string; emoji: string }) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [name, setName] = useState('');
+  const [emoji, setEmoji] = useState('📂');
+
+  return (
+    <Dialog open={open} onClose={onClose} title="📂 Kelola Kategori">
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <Input placeholder="Emoji" value={emoji} onChange={e => setEmoji(e.target.value)} className="w-16 text-center" />
+          <Input placeholder="Nama kategori baru" value={name} onChange={e => setName(e.target.value)} className="flex-1" />
+          <Button size="sm" onClick={() => {
+            if (!name.trim()) return;
+            onCreate({ name: name.trim(), emoji });
+            setName('');
+            setEmoji('📂');
+          }}>+</Button>
+        </div>
+        {categories.length === 0 ? (
+          <p className="text-sm text-slate-400 text-center py-4">Belum ada kategori</p>
+        ) : (
+          <div className="space-y-1 max-h-60 overflow-y-auto">
+            {categories.map((cat: any) => (
+              <div key={cat.id} className="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 border border-slate-700/50">
+                <span className="text-sm text-white">{cat.emoji} {cat.name} <span className="text-slate-500 text-xs">({cat.log_count})</span></span>
+                <Button size="icon" variant="ghost" onClick={() => onDelete(cat.id)} className="h-6 w-6 text-red-400 hover:text-red-300">✕</Button>
+              </div>
+            ))}
+          </div>
+        )}
+        <Button variant="outline" onClick={onClose} className="w-full">Tutup</Button>
+      </div>
+    </Dialog>
+  );
+}
+
 export default function LearningPage() {
   const qc = useQueryClient();
   const today = todayStr();
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
-  const emptyForm = { title: '', type: 'Buku', insight: '', duration_minutes: '', log_date: today, finished: false };
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const emptyForm = { title: '', type: 'Buku', insight: '', duration_minutes: '', log_date: today, finished: false, category_id: '' };
   const [form, setForm] = useState(emptyForm);
   const insightRef = useRef<HTMLTextAreaElement>(null);
   const editInsightRef = useRef<HTMLTextAreaElement>(null);
 
-  const { data: logs = [] } = useQuery({ queryKey: ['learning'], queryFn: () => fetcher('/api/learning') });
+  // Build query params
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.set('search', searchQuery.trim());
+    if (filterCategory) params.set('category_id', filterCategory);
+    if (filterType) params.set('type', filterType);
+    return params.toString();
+  }, [searchQuery, filterCategory, filterType]);
+
+  const { data: logs = [] } = useQuery({
+    queryKey: ['learning', queryParams],
+    queryFn: () => fetcher(`/api/learning${queryParams ? `?${queryParams}` : ''}`),
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['learning-categories'],
+    queryFn: () => fetcher('/api/learning-categories'),
+  });
 
   const create = useMutation({
-    mutationFn: (d: any) => fetch('/api/learning', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...d, duration_minutes: parseInt(d.duration_minutes) || null }) }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['learning'] }); setShowForm(false); setForm(emptyForm); },
+    mutationFn: (d: any) => fetch('/api/learning', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...d, duration_minutes: parseInt(d.duration_minutes) || null, category_id: d.category_id || null }) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['learning'] }); qc.invalidateQueries({ queryKey: ['learning-categories'] }); setShowForm(false); setForm(emptyForm); },
   });
   const update = useMutation({
     mutationFn: ({ id, ...d }: any) => fetch(`/api/learning/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['learning'] }); setEditItem(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['learning'] }); qc.invalidateQueries({ queryKey: ['learning-categories'] }); setEditItem(null); },
   });
   const del = useMutation({
     mutationFn: (id: string) => fetch(`/api/learning/${id}`, { method: 'DELETE' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['learning'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['learning'] }); qc.invalidateQueries({ queryKey: ['learning-categories'] }); },
+  });
+
+  // Category mutations
+  const createCategory = useMutation({
+    mutationFn: (d: { name: string; emoji: string }) => fetch('/api/learning-categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(d) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['learning-categories'] }),
+  });
+  const deleteCategory = useMutation({
+    mutationFn: (id: string) => fetch(`/api/learning-categories/${id}`, { method: 'DELETE' }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['learning-categories'] }); qc.invalidateQueries({ queryKey: ['learning'] }); },
   });
 
   // Stats
@@ -247,17 +310,51 @@ export default function LearningPage() {
       duration_minutes: log.duration_minutes?.toString() || '',
       log_date: log.log_date || today,
       finished: log.finished,
+      category_id: log.category_id || '',
     });
   };
+
+  const hasActiveFilters = searchQuery || filterCategory || filterType;
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">📚 Log Belajar</h1>
-          <p className="text-slate-400 text-sm">{logs.length} entri total</p>
+          <p className="text-slate-400 text-sm">{logs.length} entri{hasActiveFilters ? ' (filtered)' : ' total'}</p>
         </div>
-        <Button size="sm" onClick={() => setShowForm(true)}>+ Log Baru</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setShowCategoryManager(true)}>📂</Button>
+          <Button size="sm" onClick={() => setShowForm(true)}>+ Log Baru</Button>
+        </div>
+      </div>
+
+      {/* Search & Filters */}
+      <div className="space-y-2">
+        <Input
+          placeholder="🔍 Cari judul atau insight..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+        />
+        <div className="flex gap-2 flex-wrap">
+          <Select
+            options={[{ value: '', label: '📂 Semua Kategori' }, ...categories.map((c: any) => ({ value: c.id, label: `${c.emoji} ${c.name}` }))]}
+            value={filterCategory}
+            onChange={e => setFilterCategory(e.target.value)}
+            className="flex-1 min-w-[140px]"
+          />
+          <Select
+            options={[{ value: '', label: '📖 Semua Tipe' }, ...LEARNING_TYPES.map(t => ({ value: t, label: t }))]}
+            value={filterType}
+            onChange={e => setFilterType(e.target.value)}
+            className="flex-1 min-w-[120px]"
+          />
+          {hasActiveFilters && (
+            <Button size="sm" variant="ghost" onClick={() => { setSearchQuery(''); setFilterCategory(''); setFilterType(''); }} className="text-slate-400 hover:text-white">
+              ✕ Reset
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -279,7 +376,7 @@ export default function LearningPage() {
       </div>
 
       {/* Logs list */}
-      {logs.length === 0 ? <EmptyState icon="📚" title="Belum ada log belajar" /> : (
+      {logs.length === 0 ? <EmptyState icon="📚" title={hasActiveFilters ? 'Tidak ada hasil' : 'Belum ada log belajar'} /> : (
         <div className="space-y-2">
           {logs.map((log: any) => (
             <div key={log.id} className="p-3 rounded-xl border border-slate-700/50 bg-slate-800/40">
@@ -288,6 +385,11 @@ export default function LearningPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-medium text-white">{log.title}</p>
                     <Badge variant={log.type === 'Buku' ? 'default' : log.type === 'Podcast' ? 'purple' : log.type === 'Video' ? 'warning' : 'slate'}>{log.type}</Badge>
+                    {log.category && (
+                      <Badge variant="slate" className="cursor-pointer" onClick={() => setFilterCategory(log.category_id)}>
+                        {log.category.emoji} {log.category.name}
+                      </Badge>
+                    )}
                     {log.finished && <Badge variant="success">✅ Selesai</Badge>}
                   </div>
                   <div className="flex gap-3 mt-0.5">
@@ -316,6 +418,12 @@ export default function LearningPage() {
           <div className="grid grid-cols-2 gap-2">
             <Select options={LEARNING_TYPES.map(t => ({ value: t, label: t }))} value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} />
             <Input placeholder="Durasi (menit)" type="number" value={form.duration_minutes} onChange={e => setForm(p => ({ ...p, duration_minutes: e.target.value }))} />
+            <Select
+              options={[{ value: '', label: '📂 Pilih Kategori' }, ...categories.map((c: any) => ({ value: c.id, label: `${c.emoji} ${c.name}` }))]}
+              value={form.category_id}
+              onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))}
+              className="col-span-2"
+            />
             <Input type="date" value={form.log_date} onChange={e => setForm(p => ({ ...p, log_date: e.target.value }))} className="col-span-2" />
           </div>
           <div>
@@ -341,6 +449,12 @@ export default function LearningPage() {
             <div className="grid grid-cols-2 gap-2">
               <Select options={LEARNING_TYPES.map(t => ({ value: t, label: t }))} value={editItem.type} onChange={e => setEditItem((p: any) => ({ ...p, type: e.target.value }))} />
               <Input placeholder="Durasi (menit)" type="number" value={editItem.duration_minutes} onChange={e => setEditItem((p: any) => ({ ...p, duration_minutes: e.target.value }))} />
+              <Select
+                options={[{ value: '', label: '📂 Pilih Kategori' }, ...categories.map((c: any) => ({ value: c.id, label: `${c.emoji} ${c.name}` }))]}
+                value={editItem.category_id}
+                onChange={e => setEditItem((p: any) => ({ ...p, category_id: e.target.value }))}
+                className="col-span-2"
+              />
               <Input type="date" value={editItem.log_date} onChange={e => setEditItem((p: any) => ({ ...p, log_date: e.target.value }))} className="col-span-2" />
             </div>
             <div>
@@ -362,6 +476,7 @@ export default function LearningPage() {
                   duration_minutes: parseInt(editItem.duration_minutes) || null,
                   log_date: editItem.log_date,
                   finished: editItem.finished,
+                  category_id: editItem.category_id || null,
                 });
               }} className="flex-1">Simpan</Button>
               <Button variant="outline" onClick={() => setEditItem(null)}>Batal</Button>
@@ -369,6 +484,15 @@ export default function LearningPage() {
           </div>
         )}
       </Dialog>
+
+      {/* Category Manager */}
+      <CategoryManager
+        open={showCategoryManager}
+        onClose={() => setShowCategoryManager(false)}
+        categories={categories}
+        onCreate={(data) => createCategory.mutate(data)}
+        onDelete={(id) => deleteCategory.mutate(id)}
+      />
     </div>
   );
 }

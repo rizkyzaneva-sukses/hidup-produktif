@@ -10,6 +10,8 @@ function mapLog(log: any) {
     duration_minutes: log.durationMinutes,
     log_date: log.logDate,
     finished: log.finished,
+    category_id: log.categoryId,
+    category: log.category ? { id: log.category.id, name: log.category.name, emoji: log.category.emoji } : null,
     created_at: log.createdAt,
     updated_at: log.updatedAt,
   };
@@ -26,10 +28,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.duration_minutes !== undefined) data.durationMinutes = body.duration_minutes;
     if (body.log_date !== undefined) data.logDate = body.log_date;
     if (body.finished !== undefined) data.finished = body.finished;
+    if (body.category_id !== undefined) data.categoryId = body.category_id;
     
     const log = await prisma.learningLog.update({
       where: { id },
       data,
+      include: { category: true },
     });
     return NextResponse.json(mapLog(log));
   } catch (error: any) {

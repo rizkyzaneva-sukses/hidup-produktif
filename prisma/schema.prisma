@@ -94,16 +94,28 @@ model Project {
   @@map("projects")
 }
 
+model LearningCategory {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  emoji     String        @default("📂")
+  createdAt DateTime      @default(now()) @map("created_at")
+  logs      LearningLog[]
+
+  @@map("learning_categories")
+}
+
 model LearningLog {
-  id              String   @id @default(cuid())
+  id              String            @id @default(cuid())
   title           String
   type            String
   insight         String?
-  durationMinutes Int?     @map("duration_minutes")
-  logDate         String?  @map("log_date")
-  finished        Boolean  @default(false)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  durationMinutes Int?              @map("duration_minutes")
+  logDate         String?           @map("log_date")
+  finished        Boolean           @default(false)
+  categoryId      String?           @map("category_id")
+  category        LearningCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
 
   @@map("learning_logs")
 }
