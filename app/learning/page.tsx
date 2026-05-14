@@ -1,13 +1,12 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useRef, useCallback, useMemo } from 'react';
-import { format, subDays, startOfMonth } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { LEARNING_TYPES } from '@/lib/constants';
 import { todayStr } from '@/lib/utils';
 import { Card, CardContent, Button, Input, Select, Dialog, Textarea, Badge, EmptyState } from '@/components/ui';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
-const TARGETS: Record<string, number> = { Buku: 4, Podcast: 20, Video: 20, Artikel: 20 };
 
 // ── Rich Text Toolbar ────────────────────────────────────────────────────────
 function InsightToolbar({ textareaRef, value, onChange }: { textareaRef: React.RefObject<HTMLTextAreaElement | null>; value: string; onChange: (v: string) => void }) {
@@ -295,11 +294,7 @@ export default function LearningPage() {
     return streak;
   };
 
-  const monthStart = startOfMonth(new Date());
-  const thisMonth = logs.filter((l: any) => l.log_date >= format(monthStart, 'yyyy-MM-dd'));
   const totalMinutes = logs.reduce((s: number, l: any) => s + (l.duration_minutes || 0), 0);
-  const booksFinished = thisMonth.filter((l: any) => l.type === 'Buku' && l.finished).length;
-  const insightCount = thisMonth.filter((l: any) => l.insight?.trim()).length;
 
   const openEdit = (log: any) => {
     setEditItem({
@@ -358,12 +353,10 @@ export default function LearningPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {[
           { label: 'Streak', value: `${getStreak()} hari`, icon: '🔥' },
           { label: 'Total Jam', value: `${Math.round(totalMinutes / 60)}j`, icon: '⏱' },
-          { label: 'Insight Bulan Ini', value: `${insightCount}/${TARGETS.Artikel}`, icon: '💡' },
-          { label: 'Buku Selesai', value: `${booksFinished}/${TARGETS.Buku}`, icon: '📖' },
         ].map(s => (
           <Card key={s.label}>
             <CardContent className="p-3 text-center">
