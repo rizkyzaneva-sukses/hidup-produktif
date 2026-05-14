@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+function mapLog(log: any) {
+  return {
+    id: log.id,
+    title: log.title,
+    type: log.type,
+    insight: log.insight,
+    duration_minutes: log.durationMinutes,
+    log_date: log.logDate,
+    finished: log.finished,
+    created_at: log.createdAt,
+    updated_at: log.updatedAt,
+  };
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -17,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       data,
     });
-    return NextResponse.json(log);
+    return NextResponse.json(mapLog(log));
   } catch (error: any) {
     console.error('[API] PATCH /api/learning/[id] error:', error?.message);
     return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
