@@ -262,9 +262,9 @@ export default function SettingsPage() {
                       onChange={e => setNotifTime(e.target.value)}
                       className="w-32"
                     />
-                    <span className="text-xs text-slate-500">Saat ini: <span className="text-white font-medium">{notifTime} WIB</span></span>
+                    <Button size="sm" onClick={() => saveConfig.mutate({ NOTIFICATION_TIME: notifTime })}>{saved ? '✅' : 'Simpan Jam'}</Button>
+                    <span className="text-xs text-slate-500">Aktif: <span className="text-white font-medium">{config?.NOTIFICATION_TIME || '07:00'} WIB</span></span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">Perubahan aktif setelah klik "Simpan Konfigurasi" di atas</p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={runCron}>🔔 Jalankan Sekarang (Manual)</Button>
