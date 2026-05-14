@@ -8,11 +8,19 @@ import { RoleBadge, WorkTypeBadge, PriorityDot } from '@/components/shared/badge
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-interface Task { id: string; title: string; role: string; priority: string; work_type: string; completed: boolean; notes?: string; due_date?: string; }
+interface Task { id: string; title: string; role: string; priority: string; work_type: string; completed: boolean; notes?: string; due_date?: string; project_id?: string; project_name?: string; }
 
-function TaskForm({ task, onSave, onCancel, customRoles }: { task?: Task; onSave: (data: any) => void; onCancel: () => void; customRoles: string[] }) {
+function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Task; onSave: (data: any) => void; onCancel: () => void; customRoles: string[]; projects: any[] }) {
   const allRoles = [...ROLES, ...customRoles];
-  const [form, setForm] = useState({ title: task?.title || '', role: task?.role || 'CEO', priority: task?.priority || 'Sedang', work_type: task?.work_type || 'Admin', due_date: task?.due_date || '', notes: task?.notes || '' });
+  const [form, setForm] = useState({
+    title: task?.title || '',
+    role: task?.role || 'CEO',
+    priority: task?.priority || 'Sedang',
+    work_type: task?.work_type || 'Admin',
+    due_date: task?.due_date || '',
+    notes: task?.notes || '',
+    project_id: task?.project_id || '',
+  });
   const submit = () => { if (!form.title.trim()) return; onSave(form); };
   return (
     <div className="space-y-3" onKeyDown={e => { if (e.ctrlKey && e.key === 'Enter') submit(); }}>
@@ -23,6 +31,14 @@ function TaskForm({ task, onSave, onCancel, customRoles }: { task?: Task; onSave
         <Select options={WORK_TYPES.map(w => ({ value: w, label: w }))} value={form.work_type} onChange={e => setForm(p => ({ ...p, work_type: e.target.value }))} />
         <Input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} />
       </div>
+      <select
+        value={form.project_id}
+        onChange={e => setForm(p => ({ ...p, project_id: e.target.value }))}
+        className="w-full h-10 sm:h-9 px-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
+      >
+        <option value="">Tanpa Project</option>
+        {projects.map((p: any) => <option key={p.id} value={p.id}>📁 {p.name}</option>)}
+      </select>
       <Textarea placeholder="Notes (opsional)" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
       <div className="flex gap-2">
         <Button onClick={submit} className="flex-1">Simpan <span className="ml-1 text-[10px] opacity-50">Ctrl+↵</span></Button>
@@ -37,6 +53,7 @@ export default function TasksPage() {
   const [filterRole, setFilterRole] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [filterWorkType, setFilterWorkType] = useState('');
+  const [filterProject, setFilterProject] = useState('');
   const [view, setView] = useState<'list' | 'kanban'>('list');
   const [showForm, setShowForm] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
@@ -47,6 +64,7 @@ export default function TasksPage() {
 
   const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: () => fetcher('/api/tasks') });
   const { data: customRoles = [] } = useQuery({ queryKey: ['custom-roles'], queryFn: () => fetcher('/api/custom-roles') });
+  const { data: projects = [] } = useQuery({ queryKey: ['projects'], queryFn: () => fetcher('/api/projects') });
   const customRoleNames = customRoles.map((r: any) => r.name);
   const allRoles = [...ROLES, ...customRoleNames];
 
@@ -67,6 +85,7 @@ export default function TasksPage() {
     if (filterRole && t.role !== filterRole) return false;
     if (filterPriority && t.priority !== filterPriority) return false;
     if (filterWorkType && t.work_type !== filterWorkType) return false;
+    if (filterProject && t.project_id !== filterProject) return false;
     return true;
   });
 
@@ -106,7 +125,7 @@ export default function TasksPage() {
   const quickRoleQ = quickLast.startsWith('@') ? quickLast.slice(1).toLowerCase() : '';
   const quickRoleOpts = allRoles.filter(r => !quickRoleQ || r.toLowerCase().startsWith(quickRoleQ));
 
-  const hasActiveFilters = filterRole || filterPriority || filterWorkType;
+  const hasActiveFilters = filterRole || filterPriority || filterWorkType || filterProject;
 
   const TaskRow = ({ task }: { task: Task }) => (
     <div className={`flex items-start gap-3 p-3 sm:p-4 rounded-xl border transition-all ${
@@ -121,6 +140,9 @@ export default function TasksPage() {
           <PriorityDot priority={task.priority} />
           <RoleBadge role={task.role} />
           <WorkTypeBadge type={task.work_type} />
+          {task.project_name && (
+            <span className="text-[10px] sm:text-xs text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-md">📁 {task.project_name}</span>
+          )}
           {task.due_date && (
             <span className={`text-[10px] sm:text-xs ${isOverdue(task.due_date) ? 'text-red-400' : isTodayDate(task.due_date) ? 'text-amber-400' : 'text-slate-500'}`}>
               📅 {formatDateShort(task.due_date)}
@@ -204,8 +226,12 @@ export default function TasksPage() {
             <option value="">Semua Tipe</option>
             {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
+          <select value={filterProject} onChange={e => setFilterProject(e.target.value)} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+            <option value="">Semua Project</option>
+            {projects.map((p: any) => <option key={p.id} value={p.id}>📁 {p.name}</option>)}
+          </select>
           {hasActiveFilters && (
-            <button onClick={() => { setFilterRole(''); setFilterPriority(''); setFilterWorkType(''); }} className="h-8 sm:h-9 px-3 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition-colors">
+            <button onClick={() => { setFilterRole(''); setFilterPriority(''); setFilterWorkType(''); setFilterProject(''); }} className="h-8 sm:h-9 px-3 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition-colors">
               ✕ Reset
             </button>
           )}
@@ -244,10 +270,10 @@ export default function TasksPage() {
       )}
 
       <Dialog open={showForm} onClose={() => setShowForm(false)} title="➕ Tambah Task">
-        <TaskForm customRoles={customRoleNames} onSave={data => createTask.mutate(data)} onCancel={() => setShowForm(false)} />
+        <TaskForm customRoles={customRoleNames} projects={projects} onSave={data => createTask.mutate(data)} onCancel={() => setShowForm(false)} />
       </Dialog>
       <Dialog open={!!editTask} onClose={() => setEditTask(null)} title="✏️ Edit Task">
-        {editTask && <TaskForm task={editTask} customRoles={customRoleNames} onSave={data => updateTask.mutate({ id: editTask.id, ...data })} onCancel={() => setEditTask(null)} />}
+        {editTask && <TaskForm task={editTask} customRoles={customRoleNames} projects={projects} onSave={data => updateTask.mutate({ id: editTask.id, ...data })} onCancel={() => setEditTask(null)} />}
       </Dialog>
     </div>
   );

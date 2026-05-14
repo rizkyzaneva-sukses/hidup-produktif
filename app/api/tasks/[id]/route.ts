@@ -14,12 +14,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.completed !== undefined) data.completed = body.completed;
     if (body.notes !== undefined) data.notes = body.notes;
     if (body.due_date !== undefined) data.dueDate = body.due_date;
+    if (body.project_id !== undefined) data.projectId = body.project_id || null;
     
     const task = await prisma.task.update({
       where: { id },
       data,
+      include: { project: { select: { id: true, name: true } } },
     });
-    return NextResponse.json(task);
+    return NextResponse.json({
+      ...task,
+      work_type: task.workType,
+      due_date: task.dueDate,
+      project_id: task.projectId,
+      project_name: task.project?.name || null,
+    });
   } catch (error: any) {
     console.error('[API] PATCH /api/tasks/[id] error:', error?.message);
     return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });

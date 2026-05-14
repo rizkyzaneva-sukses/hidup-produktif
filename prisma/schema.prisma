@@ -18,6 +18,8 @@ model Task {
   completed Boolean  @default(false)
   notes     String?
   dueDate   String?  @map("due_date")
+  projectId String?  @map("project_id")
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -85,6 +87,7 @@ model Project {
   status      String   @default("Aktif")
   subtasks    String   @default("[]")
   ideaId      String?  @map("idea_id")
+  tasks       Task[]
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
