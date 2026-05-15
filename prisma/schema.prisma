@@ -127,6 +127,7 @@ model Reminder {
   date      String?
   frequency String   @default("Sekali")
   active    Boolean  @default(true)
+  archived  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("reminders")
@@ -139,6 +140,7 @@ model Subscription {
   tanggalRenewal  String?  @map("tanggal_renewal")
   kategori        String   @default("Software")
   status          String   @default("Aktif")
+  archived        Boolean  @default(false)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 

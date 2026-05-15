@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const dueToday = searchParams.get('due_today');
+    const showArchived = searchParams.get('archived') === 'true';
 
     if (dueToday) {
       const today = todayStr();
@@ -16,6 +17,7 @@ export async function GET(req: NextRequest) {
       const reminders = await prisma.reminder.findMany({
         where: {
           active: true,
+          archived: false,
           OR: [
             { frequency: 'Sekali', date: today },
             { frequency: 'Harian' },
@@ -28,6 +30,7 @@ export async function GET(req: NextRequest) {
       const weeklyMonthly = await prisma.reminder.findMany({
         where: {
           active: true,
+          archived: false,
           frequency: { in: ['Mingguan', 'Bulanan'] },
         },
       });
@@ -48,6 +51,7 @@ export async function GET(req: NextRequest) {
     }
 
     const reminders = await prisma.reminder.findMany({
+      where: showArchived ? { archived: true } : { archived: false },
       orderBy: { createdAt: 'desc' },
       take: 200,
     });
@@ -68,6 +72,7 @@ export async function POST(req: NextRequest) {
         date: body.date || null,
         frequency: body.frequency || 'Sekali',
         active: true,
+        archived: false,
       },
     });
     return NextResponse.json(reminder);

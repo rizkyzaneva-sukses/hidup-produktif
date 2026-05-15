@@ -11,6 +11,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.date !== undefined) data.date = body.date;
     if (body.frequency !== undefined) data.frequency = body.frequency;
     if (body.active !== undefined) data.active = body.active;
+    if (body.archived !== undefined) data.archived = body.archived;
     
     const reminder = await prisma.reminder.update({
       where: { id },

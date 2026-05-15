@@ -9,6 +9,7 @@ function mapSub(s: any) {
     tanggal_renewal: s.tanggalRenewal,
     kategori: s.kategori,
     status: s.status,
+    archived: s.archived,
     created_at: s.createdAt,
     updated_at: s.updatedAt,
   };
@@ -24,6 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.tanggal_renewal !== undefined) data.tanggalRenewal = body.tanggal_renewal || null;
     if (body.kategori !== undefined) data.kategori = body.kategori;
     if (body.status !== undefined) data.status = body.status;
+    if (body.archived !== undefined) data.archived = body.archived;
     
     const sub = await prisma.subscription.update({
       where: { id },
