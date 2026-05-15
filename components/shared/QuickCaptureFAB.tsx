@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ROLES, IDEA_CATEGORIES } from '@/lib/constants';
 import { Button, Input } from '@/components/ui';
 
@@ -33,6 +33,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [dropdown, setDropdown] = useState<'role' | 'cat' | null>(null);
+  const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const allRoles = [...ROLES, ...customRoles, 'Umum'];
@@ -53,10 +54,25 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
   const handleChange = (val: string) => {
     setInput(val);
     const last = val.split(' ').pop() || '';
-    if (last.startsWith('@')) setDropdown('role');
-    else if (last.startsWith('#')) setDropdown('cat');
-    else setDropdown(null);
+    if (last.startsWith('@')) { setDropdown('role'); setHighlight(0); }
+    else if (last.startsWith('#')) { setDropdown('cat'); setHighlight(0); }
+    else { setDropdown(null); setHighlight(0); }
   };
+
+  const getOpts = (): string[] => {
+    const last = input.split(' ').pop() || '';
+    if (dropdown === 'role') {
+      const q = last.startsWith('@') ? last.slice(1).toLowerCase() : '';
+      return allRoles.filter(r => !q || r.toLowerCase().startsWith(q));
+    }
+    if (dropdown === 'cat') {
+      const q = last.startsWith('#') ? last.slice(1).toLowerCase() : '';
+      return IDEA_CATEGORIES.filter(c => !q || c.toLowerCase().replace(' ', '').startsWith(q));
+    }
+    return [];
+  };
+
+  const currentOpts = getOpts();
 
   const handleSave = async () => {
     const { title, role, category } = parseInput(input);
@@ -78,7 +94,42 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
     parts[parts.length - 1] = tag;
     setInput(parts.join(' ') + ' ');
     setDropdown(null);
+    setHighlight(0);
     inputRef.current?.focus();
+  };
+
+  const insertFromOpts = (opt: string) => {
+    if (dropdown === 'role') insertTag(`@${opt.toLowerCase()}`);
+    else if (dropdown === 'cat') insertTag(`#${opt.toLowerCase().replace(' ', '')}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (dropdown && currentOpts.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setHighlight(prev => (prev + 1) % currentOpts.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setHighlight(prev => (prev - 1 + currentOpts.length) % currentOpts.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        insertFromOpts(currentOpts[highlight]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setDropdown(null);
+        setHighlight(0);
+        return;
+      }
+    } else {
+      if (e.key === 'Enter') handleSave();
+      if (e.key === 'Escape') setOpen(false);
+    }
   };
 
   return (
@@ -105,56 +156,28 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
                 ref={inputRef}
                 value={input}
                 onChange={e => handleChange(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !dropdown) handleSave();
-                  if (e.key === 'Tab' && dropdown) {
-                    e.preventDefault();
-                    const last2 = input.split(' ').pop() || '';
-                    if (dropdown === 'role') {
-                      const q2 = last2.startsWith('@') ? last2.slice(1).toLowerCase() : '';
-                      const first = allRoles.find(r => !q2 || r.toLowerCase().startsWith(q2));
-                      if (first) insertTag(`@${first.toLowerCase()}`);
-                    } else {
-                      const q2 = last2.startsWith('#') ? last2.slice(1).toLowerCase() : '';
-                      const first = IDEA_CATEGORIES.find(c => !q2 || c.toLowerCase().replace(' ', '').startsWith(q2));
-                      if (first) insertTag(`#${first.toLowerCase().replace(' ', '')}`);
-                    }
-                  }
-                }}
+                onKeyDown={handleKeyDown}
                 placeholder="Tulis ide... @role #kategori (opsional)"
                 className="pr-16"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 hidden sm:inline">Enter ↵</span>
             </div>
 
-            {dropdown === 'role' && (() => {
-              const last = input.split(' ').pop() || '';
-              const q = last.startsWith('@') ? last.slice(1).toLowerCase() : '';
-              const opts = allRoles.filter(r => !q || r.toLowerCase().startsWith(q));
-              return opts.length > 0 ? (
-                <div className="mt-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
-                  {opts.map(r => (
-                    <button key={r} onClick={() => insertTag(`@${r.toLowerCase()}`)} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 active:bg-slate-600 transition-colors">
-                      @{r.toLowerCase()}
-                    </button>
-                  ))}
-                </div>
-              ) : null;
-            })()}
-            {dropdown === 'cat' && (() => {
-              const last = input.split(' ').pop() || '';
-              const q = last.startsWith('#') ? last.slice(1).toLowerCase() : '';
-              const opts = IDEA_CATEGORIES.filter(c => !q || c.toLowerCase().replace(' ', '').startsWith(q));
-              return opts.length > 0 ? (
-                <div className="mt-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
-                  {opts.map(c => (
-                    <button key={c} onClick={() => insertTag(`#${c.toLowerCase().replace(' ', '')}`)} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 active:bg-slate-600 transition-colors">
-                      #{c.toLowerCase()}
-                    </button>
-                  ))}
-                </div>
-              ) : null;
-            })()}
+            {dropdown && currentOpts.length > 0 && (
+              <div className="mt-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+                {currentOpts.map((opt, idx) => (
+                  <button
+                    key={opt}
+                    onClick={() => insertFromOpts(opt)}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                      idx === highlight ? 'bg-blue-600/30 text-white' : 'text-slate-300 hover:bg-slate-700 active:bg-slate-600'
+                    }`}
+                  >
+                    {dropdown === 'role' ? '@' : '#'}{opt.toLowerCase().replace(' ', '')}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="flex gap-2 mt-3">
               <Button onClick={handleSave} disabled={saving || !input.trim()} className="flex-1">

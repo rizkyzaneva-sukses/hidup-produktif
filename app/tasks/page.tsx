@@ -51,6 +51,8 @@ function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Ta
   );
 }
 
+type DropdownType = 'role' | 'priority' | 'worktype' | 'project' | null;
+
 export default function TasksPage() {
   const qc = useQueryClient();
   const [filterRole, setFilterRole] = useState('');
@@ -61,7 +63,8 @@ export default function TasksPage() {
   const [showForm, setShowForm] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [quickInput, setQuickInput] = useState('');
-  const [quickDropdown, setQuickDropdown] = useState(false);
+  const [quickDropdown, setQuickDropdown] = useState<DropdownType>(null);
+  const [quickHighlight, setQuickHighlight] = useState(0);
   const quickRef = useRef<HTMLInputElement>(null);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -95,38 +98,135 @@ export default function TasksPage() {
   const active = filtered.filter((t: any) => !t.completed);
   const done = filtered.filter((t: any) => t.completed);
 
+  // Get current dropdown options based on type
+  const getQuickOpts = (): string[] => {
+    const last = quickInput.split(' ').pop() || '';
+    if (quickDropdown === 'role') {
+      const q = last.startsWith('@') ? last.slice(1).toLowerCase() : '';
+      return allRoles.filter(r => !q || r.toLowerCase().startsWith(q));
+    }
+    if (quickDropdown === 'priority') {
+      const q = last.startsWith('#') ? last.slice(1).toLowerCase() : '';
+      return PRIORITIES.filter(p => !q || p.toLowerCase().startsWith(q));
+    }
+    if (quickDropdown === 'worktype') {
+      const q = last.startsWith('$') ? last.slice(1).toLowerCase() : '';
+      return WORK_TYPES.filter(w => !q || w.toLowerCase().replace(/\s/g, '').startsWith(q));
+    }
+    if (quickDropdown === 'project') {
+      const q = last.startsWith('%') ? last.slice(1).toLowerCase() : '';
+      return projects.filter((p: any) => !q || p.name.toLowerCase().startsWith(q)).map((p: any) => p.name);
+    }
+    return [];
+  };
+
+  const quickOpts = getQuickOpts();
+
   const quickAdd = async () => {
     if (!quickInput.trim()) return;
     let title = quickInput.trim();
     let role = 'CEO';
+    let priority = 'Sedang';
+    let work_type = 'Admin';
+    let project_id = '';
+
+    // Parse @role
     const roleMatch = title.match(/@(\w+)/);
     if (roleMatch) {
       const matched = allRoles.find(r => r.toLowerCase() === roleMatch[1].toLowerCase());
       if (matched) role = matched;
       title = title.replace(roleMatch[0], '').trim();
     }
-    await createTask.mutateAsync({ title, role, priority: 'Sedang', work_type: 'Admin' });
+    // Parse #priority
+    const prioMatch = title.match(/#(\w+)/);
+    if (prioMatch) {
+      const matched = PRIORITIES.find(p => p.toLowerCase() === prioMatch[1].toLowerCase());
+      if (matched) priority = matched;
+      title = title.replace(prioMatch[0], '').trim();
+    }
+    // Parse $worktype
+    const wtMatch = title.match(/\$(\w+)/);
+    if (wtMatch) {
+      const matched = WORK_TYPES.find(w => w.toLowerCase().replace(/\s/g, '') === wtMatch[1].toLowerCase());
+      if (matched) work_type = matched;
+      title = title.replace(wtMatch[0], '').trim();
+    }
+    // Parse %project
+    const projMatch = title.match(/%(\w+)/);
+    if (projMatch) {
+      const matched = projects.find((p: any) => p.name.toLowerCase() === projMatch[1].toLowerCase());
+      if (matched) project_id = matched.id;
+      title = title.replace(projMatch[0], '').trim();
+    }
+
+    if (!title) return;
+    await createTask.mutateAsync({ title, role, priority, work_type, project_id: project_id || undefined });
     setQuickInput('');
-    setQuickDropdown(false);
+    setQuickDropdown(null);
+    setQuickHighlight(0);
   };
 
   const handleQuickChange = (val: string) => {
     setQuickInput(val);
     const last = val.split(' ').pop() || '';
-    setQuickDropdown(last.startsWith('@'));
+    if (last.startsWith('@')) { setQuickDropdown('role'); setQuickHighlight(0); }
+    else if (last.startsWith('#')) { setQuickDropdown('priority'); setQuickHighlight(0); }
+    else if (last.startsWith('$')) { setQuickDropdown('worktype'); setQuickHighlight(0); }
+    else if (last.startsWith('%')) { setQuickDropdown('project'); setQuickHighlight(0); }
+    else { setQuickDropdown(null); setQuickHighlight(0); }
   };
 
-  const insertQuickRole = (role: string) => {
+  const insertQuickTag = (value: string) => {
     const parts = quickInput.split(' ');
-    parts[parts.length - 1] = `@${role.toLowerCase()}`;
+    const prefix = quickDropdown === 'role' ? '@' : quickDropdown === 'priority' ? '#' : quickDropdown === 'worktype' ? '$' : '%';
+    parts[parts.length - 1] = `${prefix}${value.toLowerCase().replace(/\s/g, '')}`;
     setQuickInput(parts.join(' ') + ' ');
-    setQuickDropdown(false);
+    setQuickDropdown(null);
+    setQuickHighlight(0);
     quickRef.current?.focus();
   };
 
-  const quickLast = quickInput.split(' ').pop() || '';
-  const quickRoleQ = quickLast.startsWith('@') ? quickLast.slice(1).toLowerCase() : '';
-  const quickRoleOpts = allRoles.filter(r => !quickRoleQ || r.toLowerCase().startsWith(quickRoleQ));
+  const handleQuickKeyDown = (e: React.KeyboardEvent) => {
+    if (quickDropdown && quickOpts.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setQuickHighlight(prev => (prev + 1) % quickOpts.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setQuickHighlight(prev => (prev - 1 + quickOpts.length) % quickOpts.length);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        insertQuickTag(quickOpts[quickHighlight]);
+        return;
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        insertQuickTag(quickOpts[quickHighlight]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setQuickDropdown(null);
+        setQuickHighlight(0);
+        return;
+      }
+    } else {
+      if (e.key === 'Enter') quickAdd();
+      if (e.key === 'Escape') { setQuickDropdown(null); setQuickHighlight(0); }
+    }
+  };
+
+  const getDropdownPrefix = () => {
+    if (quickDropdown === 'role') return '@';
+    if (quickDropdown === 'priority') return '#';
+    if (quickDropdown === 'worktype') return '$';
+    if (quickDropdown === 'project') return '%';
+    return '';
+  };
 
   const hasActiveFilters = filterRole || filterPriority || filterWorkType || filterProject;
 
@@ -188,22 +288,25 @@ export default function TasksPage() {
       {/* Quick add */}
       <div className="relative">
         <div className="flex gap-2">
-          <Input ref={quickRef} placeholder="Tambah task cepat... @role (Enter)" value={quickInput} onChange={e => handleQuickChange(e.target.value)} onKeyDown={e => {
-            if (e.key === 'Enter' && !quickDropdown) quickAdd();
-            if (e.key === 'Tab' && quickDropdown) { e.preventDefault(); if (quickRoleOpts[0]) insertQuickRole(quickRoleOpts[0].toLowerCase()); }
-            if (e.key === 'Escape') setQuickDropdown(false);
-          }} />
+          <Input ref={quickRef} placeholder="Task cepat... @role #prioritas $tipe %project" value={quickInput} onChange={e => handleQuickChange(e.target.value)} onKeyDown={handleQuickKeyDown} />
           <Button onClick={quickAdd} size="sm" className="flex-shrink-0">+</Button>
         </div>
-        {quickDropdown && quickRoleOpts.length > 0 && (
-          <div className="absolute z-20 top-full left-0 mt-1 w-48 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-xl">
-            {quickRoleOpts.map(r => (
-              <button key={r} onClick={() => insertQuickRole(r.toLowerCase())} className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors">
-                @{r.toLowerCase()}
+        {quickDropdown && quickOpts.length > 0 && (
+          <div className="absolute z-20 top-full left-0 mt-1 w-56 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-xl max-h-48 overflow-y-auto">
+            {quickOpts.map((opt, idx) => (
+              <button
+                key={opt}
+                onClick={() => insertQuickTag(opt)}
+                className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                  idx === quickHighlight ? 'bg-blue-600/30 text-white' : 'text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {getDropdownPrefix()}{opt.toLowerCase().replace(/\s/g, '')}
               </button>
             ))}
           </div>
         )}
+        <p className="text-[10px] text-slate-600 mt-1">@role · #tinggi/sedang/rendah · $deepwork/admin/shallow · %project</p>
       </div>
 
       {/* Filters - collapsible on mobile */}
