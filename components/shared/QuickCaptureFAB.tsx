@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { ROLES, IDEA_CATEGORIES } from '@/lib/constants';
 import { Button, Input } from '@/components/ui';
 
@@ -28,6 +29,7 @@ function parseInput(raw: string) {
 }
 
 export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }) {
+  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [saving, setSaving] = useState(false);
@@ -86,6 +88,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
     setSaving(false);
     setSaved(true);
     setInput('');
+    qc.invalidateQueries({ queryKey: ['ideas'] });
     setTimeout(() => setSaved(false), 1200);
   };
 

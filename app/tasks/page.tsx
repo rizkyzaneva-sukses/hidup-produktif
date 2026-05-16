@@ -1,6 +1,6 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { ROLES, PRIORITIES, WORK_TYPES } from '@/lib/constants';
 import { isOverdue, isTodayDate, isFutureDate, formatDateShort } from '@/lib/utils';
 import { Card, CardContent, Button, Input, Select, Dialog, Textarea, EmptyState, Badge } from '@/components/ui';
@@ -53,6 +53,9 @@ function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Ta
 
 type DropdownType = 'role' | 'priority' | 'worktype' | 'project' | null;
 
+const ITEMS_PER_PAGE = 10;
+const DONE_PREVIEW_COUNT = 3;
+
 export default function TasksPage() {
   const qc = useQueryClient();
   const [filterRole, setFilterRole] = useState('');
@@ -67,6 +70,10 @@ export default function TasksPage() {
   const [quickHighlight, setQuickHighlight] = useState(0);
   const quickRef = useRef<HTMLInputElement>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activePage, setActivePage] = useState(1);
+  const [showAllDone, setShowAllDone] = useState(false);
+  const [donePage, setDonePage] = useState(1);
 
   const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: () => fetcher('/api/tasks') });
   const { data: customRoles = [] } = useQuery({ queryKey: ['custom-roles'], queryFn: () => fetcher('/api/custom-roles') });
@@ -87,16 +94,30 @@ export default function TasksPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   });
 
-  const filtered = tasks.filter((t: any) => {
+  const filtered = useMemo(() => tasks.filter((t: any) => {
     if (filterRole && t.role !== filterRole) return false;
     if (filterPriority && t.priority !== filterPriority) return false;
     if (filterWorkType && t.work_type !== filterWorkType) return false;
     if (filterProject && t.project_id !== filterProject) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!t.title.toLowerCase().includes(q) && !(t.notes || '').toLowerCase().includes(q)) return false;
+    }
     return true;
-  });
+  }), [tasks, filterRole, filterPriority, filterWorkType, filterProject, searchQuery]);
 
   const active = filtered.filter((t: any) => !t.completed);
   const done = filtered.filter((t: any) => t.completed);
+
+  // Pagination for active tasks
+  const totalActivePages = Math.ceil(active.length / ITEMS_PER_PAGE);
+  const paginatedActive = active.slice((activePage - 1) * ITEMS_PER_PAGE, activePage * ITEMS_PER_PAGE);
+
+  // Show only 3 done tasks initially, then paginate when expanded
+  const totalDonePages = Math.ceil(done.length / ITEMS_PER_PAGE);
+  const visibleDone = showAllDone
+    ? done.slice((donePage - 1) * ITEMS_PER_PAGE, donePage * ITEMS_PER_PAGE)
+    : done.slice(0, DONE_PREVIEW_COUNT);
 
   // Get current dropdown options based on type
   const getQuickOpts = (): string[] => {
@@ -228,7 +249,7 @@ export default function TasksPage() {
     return '';
   };
 
-  const hasActiveFilters = filterRole || filterPriority || filterWorkType || filterProject;
+  const hasActiveFilters = filterRole || filterPriority || filterWorkType || filterProject || searchQuery;
 
   const TaskRow = ({ task }: { task: Task }) => (
     <div className={`flex items-start gap-3 p-3 sm:p-4 rounded-xl border transition-all ${
@@ -270,6 +291,9 @@ export default function TasksPage() {
     { label: '📅 Coming Soon', tasks: active.filter((t: any) => isFutureDate(t.due_date)) },
   ];
 
+  // Reset page when filters/search change
+  const resetPages = () => { setActivePage(1); setDonePage(1); setShowAllDone(false); };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-5">
       {/* Header */}
@@ -283,6 +307,21 @@ export default function TasksPage() {
           <button onClick={() => setView('kanban')} className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm transition-colors hidden sm:inline-flex ${view === 'kanban' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'}`}>Kanban</button>
           <Button onClick={() => setShowForm(true)} size="sm">+ Task</Button>
         </div>
+      </div>
+
+      {/* Search box */}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
+        <input
+          type="text"
+          placeholder="Cari task..."
+          value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); resetPages(); }}
+          className="w-full h-9 sm:h-10 pl-9 pr-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
+        />
+        {searchQuery && (
+          <button onClick={() => { setSearchQuery(''); resetPages(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs">✕</button>
+        )}
       </div>
 
       {/* Quick add */}
@@ -311,8 +350,8 @@ export default function TasksPage() {
 
       {/* Filters - collapsible on mobile */}
       <div>
-        <button 
-          onClick={() => setShowFilters(!showFilters)} 
+        <button
+          onClick={() => setShowFilters(!showFilters)}
           className="sm:hidden flex items-center gap-2 text-xs text-slate-400 mb-2"
         >
           <span>🔍 Filter</span>
@@ -320,24 +359,24 @@ export default function TasksPage() {
           <span>{showFilters ? '▲' : '▼'}</span>
         </button>
         <div className={`flex flex-wrap gap-2 ${showFilters ? 'flex' : 'hidden sm:flex'}`}>
-          <select value={filterRole} onChange={e => setFilterRole(e.target.value)} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterRole} onChange={e => { setFilterRole(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Peran</option>
             {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
-          <select value={filterPriority} onChange={e => setFilterPriority(e.target.value)} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterPriority} onChange={e => { setFilterPriority(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Prioritas</option>
             {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <select value={filterWorkType} onChange={e => setFilterWorkType(e.target.value)} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterWorkType} onChange={e => { setFilterWorkType(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Tipe</option>
             {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
-          <select value={filterProject} onChange={e => setFilterProject(e.target.value)} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterProject} onChange={e => { setFilterProject(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Project</option>
             {projects.map((p: any) => <option key={p.id} value={p.id}>📁 {p.name}</option>)}
           </select>
           {hasActiveFilters && (
-            <button onClick={() => { setFilterRole(''); setFilterPriority(''); setFilterWorkType(''); setFilterProject(''); }} className="h-8 sm:h-9 px-3 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition-colors">
+            <button onClick={() => { setFilterRole(''); setFilterPriority(''); setFilterWorkType(''); setFilterProject(''); setSearchQuery(''); resetPages(); }} className="h-8 sm:h-9 px-3 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition-colors">
               ✕ Reset
             </button>
           )}
@@ -348,11 +387,77 @@ export default function TasksPage() {
       {view === 'list' && (
         <div className="space-y-4">
           {active.length === 0 && done.length === 0 && <EmptyState icon="✅" title="Belum ada task" desc="Tambah task baru di atas" />}
-          {active.length > 0 && <div className="space-y-2">{active.map((t: any) => <TaskRow key={t.id} task={t} />)}</div>}
+          
+          {/* Active tasks with pagination */}
+          {active.length > 0 && (
+            <div className="space-y-2">
+              {paginatedActive.map((t: any) => <TaskRow key={t.id} task={t} />)}
+              {totalActivePages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-3">
+                  <button
+                    onClick={() => setActivePage(p => Math.max(1, p - 1))}
+                    disabled={activePage === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-slate-800 border border-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors"
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-xs text-slate-500">{activePage} / {totalActivePages}</span>
+                  <button
+                    onClick={() => setActivePage(p => Math.min(totalActivePages, p + 1))}
+                    disabled={activePage === totalActivePages}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-slate-800 border border-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Completed tasks - show 3 initially with "Show More" */}
           {done.length > 0 && (
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 px-1 font-medium">Selesai ({done.length})</p>
-              <div className="space-y-2">{done.map((t: any) => <TaskRow key={t.id} task={t} />)}</div>
+              <div className="space-y-2">
+                {visibleDone.map((t: any) => <TaskRow key={t.id} task={t} />)}
+              </div>
+              
+              {/* Show More / pagination controls for done */}
+              {!showAllDone && done.length > DONE_PREVIEW_COUNT && (
+                <button
+                  onClick={() => setShowAllDone(true)}
+                  className="w-full mt-2 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-colors"
+                >
+                  Tampilkan semua ({done.length - DONE_PREVIEW_COUNT} lainnya) ▼
+                </button>
+              )}
+              {showAllDone && totalDonePages > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-3">
+                  <button
+                    onClick={() => setDonePage(p => Math.max(1, p - 1))}
+                    disabled={donePage === 1}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-slate-800 border border-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors"
+                  >
+                    ← Prev
+                  </button>
+                  <span className="text-xs text-slate-500">{donePage} / {totalDonePages}</span>
+                  <button
+                    onClick={() => setDonePage(p => Math.min(totalDonePages, p + 1))}
+                    disabled={donePage === totalDonePages}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-slate-800 border border-slate-700 text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-700 transition-colors"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+              {showAllDone && (
+                <button
+                  onClick={() => { setShowAllDone(false); setDonePage(1); }}
+                  className="w-full mt-2 py-1.5 rounded-xl text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  Sembunyikan ▲
+                </button>
+              )}
             </div>
           )}
         </div>
