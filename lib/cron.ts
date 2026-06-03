@@ -109,12 +109,5 @@ export async function runDailyNotifications(): Promise<string[]> {
     messages.push(result.ok ? `✅ Sub sent: ${s.nama}` : `❌ Failed: ${s.nama} — ${result.error}`);
   }
 
-  // 3. Summary message if nothing to send
-  if (messages.length === 0) {
-    const summaryMsg = `☀️ <b>Selamat Pagi!</b>\n\n✅ Tidak ada reminder untuk hari ini.\n📦 Tidak ada subscription yang perlu diperbarui.\n\n💪 Semangat produktif hari ini!`;
-    const result = await sendTelegram(summaryMsg);
-    messages.push(result.ok ? '✅ Morning greeting sent' : `❌ Failed to send greeting: ${result.error}`);
-  }
-
   return messages;
 }
