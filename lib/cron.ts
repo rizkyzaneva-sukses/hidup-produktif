@@ -94,19 +94,27 @@ export async function runDailyNotifications(): Promise<string[]> {
     messages.push(result.ok ? `✅ Reminder sent: ${r.title}` : `❌ Failed: ${r.title} — ${result.error}`);
   }
 
-  // 2. Subscriptions due in 7 days
-  const targetDate = new Date(wibTime);
-  targetDate.setDate(targetDate.getDate() + 7);
-  const target = targetDate.toISOString().split('T')[0];
+  // 2. Subscriptions due in 7, 3, or 1 days
+  const subAlerts = [
+    { days: 7, emoji: '⚠️', label: '7 hari lagi' },
+    { days: 3, emoji: '🔴', label: '3 hari lagi' },
+    { days: 1, emoji: '🚨', label: 'BESOK' },
+  ];
 
-  const subs = await prisma.subscription.findMany({
-    where: { status: 'Aktif', tanggalRenewal: target },
-  });
+  for (const alert of subAlerts) {
+    const targetDate = new Date(wibTime);
+    targetDate.setDate(targetDate.getDate() + alert.days);
+    const target = targetDate.toISOString().split('T')[0];
 
-  for (const s of subs) {
-    const msg = `⚠️ <b>Subscription Renewal</b> dalam 7 hari!\n📦 ${s.nama}\n💰 ${formatRupiah(s.nominal)}/bln\n🗓 Renewal: ${s.tanggalRenewal}\n\nJangan lupa cancel jika tidak perlu lagi.`;
-    const result = await sendTelegram(msg);
-    messages.push(result.ok ? `✅ Sub sent: ${s.nama}` : `❌ Failed: ${s.nama} — ${result.error}`);
+    const subs = await prisma.subscription.findMany({
+      where: { status: 'Aktif', tanggalRenewal: target },
+    });
+
+    for (const s of subs) {
+      const msg = `${alert.emoji} <b>Subscription Renewal — ${alert.label}!</b>\n\n📦 ${s.nama}\n🏷 Kategori: ${s.kategori}\n💰 ${formatRupiah(s.nominal)}/bln\n🗓 Renewal: ${s.tanggalRenewal}\n\n${alert.days === 1 ? '⚡ Renewal besok! Segera siapkan.' : 'Jangan lupa cancel jika tidak perlu lagi.'}`;
+      const result = await sendTelegram(msg);
+      messages.push(result.ok ? `✅ Sub alert H-${alert.days} sent: ${s.nama}` : `❌ Failed H-${alert.days}: ${s.nama} — ${result.error}`);
+    }
   }
 
   return messages;
