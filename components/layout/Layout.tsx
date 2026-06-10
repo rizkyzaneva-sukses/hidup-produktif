@@ -6,18 +6,21 @@ import { cn } from '@/lib/utils';
 import { QuickCaptureFAB } from '@/components/shared/QuickCaptureFAB';
 import { getEffectiveKey, matchesKeyCombo } from '@/lib/shortcuts';
 
-const NAV = [
+const NAV_MAIN = [
   { href: '/', icon: '🏠', label: 'Beranda' },
   { href: '/sprint', icon: '🎯', label: 'Daily Sprint' },
   { href: '/tasks', icon: '✅', label: 'Tasks' },
   { href: '/habits', icon: '🌟', label: 'Habits' },
-  { href: '/focus', icon: '⏱', label: 'Focus Mode' },
-  { href: '/ideas', icon: '💡', label: 'Parkir Ide' },
+  { href: '/focus', icon: '⏱', label: 'Focus' },
+];
+
+const NAV_KELOLA = [
+  { href: '/ideas', icon: '💡', label: 'Ide' },
   { href: '/projects', icon: '🗂', label: 'Proyek' },
   { href: '/learning', icon: '📚', label: 'Log Belajar' },
   { href: '/reminders', icon: '🔔', label: 'Reminders' },
   { href: '/subscriptions', icon: '💳', label: 'Subscriptions' },
-  { href: '/laporan', icon: '📊', label: 'Laporan & Review' },
+  { href: '/laporan', icon: '📊', label: 'Laporan' },
 ];
 
 const ROLES_NAV = [
@@ -41,6 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
 
   if (pathname === '/login') return <>{children}</>;
 
@@ -115,7 +119,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-        {NAV.map(item => (
+        {/* Main */}
+        {NAV_MAIN.map(item => (
           <Link key={item.href} href={item.href}
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150',
@@ -131,25 +136,57 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
         ))}
 
-        {/* Roles section */}
+        {/* Kelola section */}
+        <div className="my-2 mx-1 border-t border-slate-700/40" />
         {(!collapsed || mobile) && (
-          <div className="pt-4 pb-1 px-3">
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Peran</p>
+          <div className="pb-1 px-3">
+            <p className="text-[10px] text-slate-600 font-semibold uppercase tracking-wider">Kelola</p>
           </div>
         )}
-        {collapsed && !mobile && <div className="my-2 mx-2 border-t border-slate-700/50" />}
-        {ROLES_NAV.map(item => (
+        {NAV_KELOLA.map(item => (
           <Link key={item.href} href={item.href}
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-150',
               pathname === item.href
-                ? 'bg-blue-600/20 text-blue-300 font-medium'
+                ? 'bg-blue-600/20 text-blue-300 font-medium shadow-sm shadow-blue-500/10'
                 : 'text-slate-400 hover:bg-slate-800/80 hover:text-white',
               collapsed && !mobile ? 'justify-center px-2' : ''
             )}
             title={collapsed && !mobile ? item.label : undefined}
           >
             <span className="text-lg flex-shrink-0">{item.icon}</span>
+            {(!collapsed || mobile) && <span>{item.label}</span>}
+          </Link>
+        ))}
+
+        {/* Roles collapsible */}
+        <div className="my-2 mx-1 border-t border-slate-700/40" />
+        {(!collapsed || mobile) ? (
+          <button
+            onClick={() => setRolesOpen(v => !v)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 transition-colors"
+          >
+            <span className="text-lg">👑</span>
+            <span className="flex-1 text-left">Peran</span>
+            <span className={cn('text-xs transition-transform', rolesOpen ? 'rotate-180' : '')}>▾</span>
+          </button>
+        ) : (
+          <div className="flex justify-center py-1">
+            <span className="text-lg text-slate-600">👑</span>
+          </div>
+        )}
+        {(rolesOpen || collapsed) && ROLES_NAV.map(item => (
+          <Link key={item.href} href={item.href}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-150',
+              pathname === item.href
+                ? 'bg-blue-600/20 text-blue-300 font-medium'
+                : 'text-slate-400 hover:bg-slate-800/80 hover:text-white',
+              collapsed && !mobile ? 'justify-center px-2' : 'pl-9'
+            )}
+            title={collapsed && !mobile ? item.label : undefined}
+          >
+            <span className="text-base flex-shrink-0">{item.icon}</span>
             {(!collapsed || mobile) && <span>{item.label}</span>}
           </Link>
         ))}
