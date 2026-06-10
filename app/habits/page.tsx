@@ -76,8 +76,6 @@ export default function HabitsPage() {
     });
   };
 
-  const totalStreak = activeHabits.reduce((max: number, h: any) => Math.max(max, getStreak(h.id)), 0);
-
   const getMonthlyProgress = (habitId: string) => {
     const days = eachDayOfInterval({ start: startOfMonth(new Date()), end: new Date() });
     const done = days.filter(d => allLogs.some((l: any) => l.habit_id === habitId && l.date === format(d, 'yyyy-MM-dd'))).length;
@@ -85,6 +83,7 @@ export default function HabitsPage() {
   };
 
   const activeHabits = habits.filter((h: any) => h.active);
+  const totalStreak = activeHabits.reduce((max: number, h: any) => Math.max(max, getStreak(h.id)), 0);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto space-y-4 sm:space-y-5">
