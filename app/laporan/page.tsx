@@ -22,6 +22,8 @@ export default function LaporanPage() {
   const { data: habitLogs = [] } = useQuery({ queryKey: ['laporan-habits'], queryFn: () => fetcher('/api/habit-logs') });
   const { data: weeklyReview } = useQuery({ queryKey: ['weekly-review', weekStart], queryFn: () => fetcher(`/api/weekly-review?week_start=${weekStart}`) });
   const { data: sprints = [] } = useQuery({ queryKey: ['sprints-history'], queryFn: () => fetcher('/api/sprints') });
+  const { data: learningLogs = [] } = useQuery({ queryKey: ['laporan-learning'], queryFn: () => fetcher('/api/learning') });
+  const { data: habits = [] } = useQuery({ queryKey: ['laporan-habit-list'], queryFn: () => fetcher('/api/habits') });
 
   const saveReview = useMutation({
     mutationFn: () => fetch('/api/weekly-review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ week_start: weekStart, reflection_notes: notes }) }),
@@ -139,42 +141,137 @@ export default function LaporanPage() {
       {/* Tren */}
       {tab === 'tren' && (
         <div className="space-y-4">
+
+          {/* Habit 7-day grid */}
           <Card>
             <CardContent>
-              <h2 className="font-medium text-white mb-3">📊 Task per Peran (Semua Waktu)</h2>
-              <div className="space-y-3">
-                {ROLES.map(role => {
-                  const rt = tasks.filter((t: any) => t.role === role);
-                  const done = rt.filter((t: any) => t.completed).length;
+              <h2 className="font-medium text-white mb-3">🌟 Habit — 7 Hari Terakhir</h2>
+              <div className="space-y-2">
+                {(habits as any[]).filter((h: any) => h.active).map((h: any) => {
+                  const days7 = Array.from({ length: 7 }, (_, i) => {
+                    const d = format(subDays(new Date(), 6 - i), 'yyyy-MM-dd');
+                    const done = (habitLogs as any[]).some((l: any) => l.habit_id === h.id && l.date === d);
+                    return { d, done };
+                  });
+                  const count = days7.filter(d => d.done).length;
                   return (
-                    <div key={role}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-300">{role}</span>
-                        <span className="text-slate-500">{done} selesai / {rt.length} total</span>
+                    <div key={h.id} className="flex items-center gap-2">
+                      <span className="text-base w-6">{h.emoji || '✅'}</span>
+                      <span className="text-xs text-slate-300 flex-1 truncate min-w-0">{h.label}</span>
+                      <div className="flex gap-1">
+                        {days7.map(({ d, done }) => (
+                          <span key={d} title={d}
+                            className={`w-4 h-4 rounded-sm ${
+                              done ? 'bg-green-500' : 'bg-slate-700'
+                            }`} />
+                        ))}
                       </div>
-                      <div className="flex gap-1 h-2">
-                        <div className="bg-blue-500 rounded-l" style={{ width: `${rt.length > 0 ? (done / rt.length) * 100 : 0}%` }} />
-                        <div className="bg-slate-700 rounded-r flex-1" />
-                      </div>
+                      <span className="text-xs text-slate-500 w-8 text-right">{count}/7</span>
                     </div>
                   );
                 })}
               </div>
+              {(habits as any[]).filter((h: any) => h.active).length === 0 && (
+                <p className="text-slate-500 text-sm">Belum ada habit aktif</p>
+              )}
             </CardContent>
           </Card>
 
+          {/* Learning hours */}
+          {(learningLogs as any[]).length > 0 && (() => {
+            const last30 = format(subDays(new Date(), 30), 'yyyy-MM-dd');
+            const recentLogs = (learningLogs as any[]).filter((l: any) => (l.log_date || l.created_at?.split('T')[0]) >= last30);
+            const totalMin = recentLogs.reduce((s: number, l: any) => s + (l.duration_minutes || 0), 0);
+            const totalH = Math.floor(totalMin / 60);
+            const totalM = totalMin % 60;
+            const finishedCount = recentLogs.filter((l: any) => l.finished).length;
+
+            // Group by week for last 4 weeks
+            const weeklyHours = Array.from({ length: 4 }, (_, i) => {
+              const wStart = format(subDays(new Date(), (3 - i) * 7 + 6), 'yyyy-MM-dd');
+              const wEnd = format(subDays(new Date(), (3 - i) * 7), 'yyyy-MM-dd');
+              const wMin = (learningLogs as any[]).filter((l: any) => {
+                const d = l.log_date || l.created_at?.split('T')[0];
+                return d >= wStart && d <= wEnd;
+              }).reduce((s: number, l: any) => s + (l.duration_minutes || 0), 0);
+              return { label: `W-${3 - i}`, minutes: wMin, hours: Math.round(wMin / 60 * 10) / 10 };
+            });
+            const maxH = Math.max(...weeklyHours.map(w => w.minutes), 1);
+
+            return (
+              <Card>
+                <CardContent>
+                  <div className="flex items-start justify-between mb-3">
+                    <h2 className="font-medium text-white">📚 Learning — 30 Hari Terakhir</h2>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-blue-400">{totalH}j {totalM}m</p>
+                      <p className="text-xs text-slate-500">{finishedCount} selesai</p>
+                    </div>
+                  </div>
+                  {/* Bar chart per minggu */}
+                  <div className="flex items-end gap-2 h-16">
+                    {weeklyHours.map((w) => (
+                      <div key={w.label} className="flex-1 flex flex-col items-center gap-1">
+                        <span className="text-[10px] text-slate-400">{w.hours}j</span>
+                        <div className="w-full rounded-t bg-blue-500/70 transition-all" style={{ height: `${(w.minutes / maxH) * 40 + 4}px` }} />
+                        <span className="text-[10px] text-slate-500">{w.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {/* Sprint completion rate */}
+          {(sprints as any[]).length > 0 && (() => {
+            const thisMonthStr = format(new Date(), 'yyyy-MM');
+            const monthSp = (sprints as any[]).filter((s: any) => s.date?.startsWith(thisMonthStr));
+            const withEod = monthSp.filter((s: any) => s.eod_submitted_at).length;
+            const rate = monthSp.length > 0 ? Math.round((withEod / monthSp.length) * 100) : 0;
+            const totalTasksDone = monthSp.reduce((sum: number, s: any) => {
+              const eod: any[] = s.eod_task_statuses || [];
+              return sum + eod.filter((t: any) => t.status === 'Selesai').length;
+            }, 0);
+            return (
+              <Card>
+                <CardContent>
+                  <h2 className="font-medium text-white mb-3">🎯 Sprint — Bulan Ini</h2>
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    {[
+                      { label: 'Sprint', value: monthSp.length },
+                      { label: 'Ditutup', value: withEod },
+                      { label: 'Task Selesai', value: totalTasksDone },
+                    ].map(s => (
+                      <div key={s.label} className="bg-slate-700/40 rounded-xl p-3 text-center">
+                        <p className="text-xl font-bold text-white">{s.value}</p>
+                        <p className="text-xs text-slate-400">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="text-slate-400">EOD Completion Rate</span>
+                    <span className="font-semibold text-white">{rate}%</span>
+                  </div>
+                  <ProgressBar value={withEod} max={monthSp.length || 1} colorClass="bg-amber-500" />
+                </CardContent>
+              </Card>
+            );
+          })()}
+
+          {/* Task & Ideas summary */}
           <Card>
             <CardContent>
-              <h2 className="font-medium text-white mb-3">📈 Ringkasan Umum</h2>
+              <h2 className="font-medium text-white mb-3">📊 Ringkasan Umum</h2>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Total Task', value: tasks.length },
-                  { label: 'Selesai', value: tasks.filter((t: any) => t.completed).length },
-                  { label: 'Total Ide', value: ideas.length },
-                  { label: 'Ide Dieksekusi', value: ideas.filter((i: any) => i.status === 'Dieksekusi').length },
+                  { label: 'Total Task', value: tasks.length, color: 'text-blue-400' },
+                  { label: 'Task Selesai', value: (tasks as any[]).filter((t: any) => t.completed).length, color: 'text-green-400' },
+                  { label: 'Total Ide', value: ideas.length, color: 'text-amber-400' },
+                  { label: 'Ide Dieksekusi', value: (ideas as any[]).filter((i: any) => i.status === 'Dieksekusi').length, color: 'text-purple-400' },
                 ].map(s => (
                   <div key={s.label} className="bg-slate-700/40 rounded-xl p-3 text-center">
-                    <p className="text-2xl font-bold text-white">{s.value}</p>
+                    <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
                     <p className="text-xs text-slate-400">{s.label}</p>
                   </div>
                 ))}

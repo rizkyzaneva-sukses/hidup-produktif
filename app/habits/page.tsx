@@ -68,6 +68,16 @@ export default function HabitsPage() {
     return streak;
   };
 
+  const getLast7Days = (habitId: string) => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = format(subDays(new Date(), 6 - i), 'yyyy-MM-dd');
+      const done = allLogs.some((l: any) => l.habit_id === habitId && l.date === d);
+      return { d, done };
+    });
+  };
+
+  const totalStreak = activeHabits.reduce((max: number, h: any) => Math.max(max, getStreak(h.id)), 0);
+
   const getMonthlyProgress = (habitId: string) => {
     const days = eachDayOfInterval({ start: startOfMonth(new Date()), end: new Date() });
     const done = days.filter(d => allLogs.some((l: any) => l.habit_id === habitId && l.date === format(d, 'yyyy-MM-dd'))).length;
@@ -81,7 +91,10 @@ export default function HabitsPage() {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-lg sm:text-xl font-bold text-white">🌟 Daily Habits</h1>
-          <p className="text-slate-400 text-xs sm:text-sm">{todayLogs.length}/{activeHabits.length} selesai hari ini</p>
+          <p className="text-slate-400 text-xs sm:text-sm">
+            {todayLogs.length}/{activeHabits.length} hari ini
+            {totalStreak > 0 && <span className="ml-2 text-amber-400">🔥 streak terpanjang {totalStreak} hari</span>}
+          </p>
         </div>
         <div className="flex gap-2 flex-shrink-0">
           <button onClick={() => setManageMode(!manageMode)} className={`px-3 py-1.5 rounded-xl text-xs sm:text-sm transition-colors ${manageMode ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}>
@@ -116,9 +129,18 @@ export default function HabitsPage() {
                     <span className="text-[10px] sm:text-xs text-slate-500 flex-shrink-0">{done}/{total}</span>
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   <p className="text-base sm:text-lg">{isDone ? '✅' : '○'}</p>
-                  {streak > 0 && <p className="text-[10px] sm:text-xs text-amber-400 mt-0.5">🔥 {streak}</p>}
+                  {/* 7-day dots */}
+                  <div className="flex gap-0.5">
+                    {getLast7Days(h.id).map(({ d, done: dayDone }) => (
+                      <span key={d} title={d}
+                        className={`w-2 h-2 rounded-full ${
+                          dayDone ? 'bg-green-400' : 'bg-slate-700'
+                        }`} />
+                    ))}
+                  </div>
+                  {streak > 0 && <p className="text-[10px] text-amber-400">🔥 {streak}d</p>}
                 </div>
               </div>
             );

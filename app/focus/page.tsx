@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -10,10 +11,44 @@ const MODES = [
   { label: 'Long Break', duration: 15 * 60, color: 'text-blue-400', bg: 'bg-blue-500/20', ring: 'border-blue-500/50' },
 ];
 
+const STORAGE_KEY = 'focus_state';
+
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
   const s = (seconds % 60).toString().padStart(2, '0');
   return `${m}:${s}`;
+}
+
+function formatFocusTime(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} menit`;
+  return `${h}j ${m}m`;
+}
+
+function todayDateStr() {
+  return format(new Date(), 'yyyy-MM-dd');
+}
+
+function loadStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    // Auto-reset if stored date is not today
+    if (data.date !== todayDateStr()) return null;
+    return data;
+  } catch { return null; }
+}
+
+function saveStorage(completedPomodoros: number, logs: any[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      date: todayDateStr(),
+      completedPomodoros,
+      logs,
+    }));
+  } catch {}
 }
 
 export default function FocusPage() {
@@ -23,6 +58,7 @@ export default function FocusPage() {
   const [selectedTaskId, setSelectedTaskId] = useState('');
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const [logs, setLogs] = useState<{ task: string; time: string; mode: string }[]>([]);
+  const [hydrated, setHydrated] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -30,6 +66,16 @@ export default function FocusPage() {
     queryKey: ['tasks-focus'],
     queryFn: () => fetcher('/api/tasks?completed=false'),
   });
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const stored = loadStorage();
+    if (stored) {
+      setCompletedPomodoros(stored.completedPomodoros || 0);
+      setLogs(stored.logs || []);
+    }
+    setHydrated(true);
+  }, []);
 
   const mode = MODES[modeIdx];
 
@@ -47,9 +93,21 @@ export default function FocusPage() {
             setRunning(false);
             playDing();
             if (modeIdx === 0) {
-              setCompletedPomodoros(c => c + 1);
-              const task = tasks.find((t: any) => t.id === selectedTaskId);
-              setLogs(prev => [{ task: task?.title || '—', time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }), mode: 'Pomodoro' }, ...prev.slice(0, 9)]);
+              setCompletedPomodoros(c => {
+                const next = c + 1;
+                setLogs(prevLogs => {
+                  const task = tasks.find((t: any) => t.id === selectedTaskId);
+                  const newLog = {
+                    task: task?.title || '—',
+                    time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                    mode: 'Pomodoro',
+                  };
+                  const newLogs = [newLog, ...prevLogs.slice(0, 19)];
+                  saveStorage(next, newLogs);
+                  return newLogs;
+                });
+                return next;
+              });
             }
             return 0;
           }
@@ -60,7 +118,7 @@ export default function FocusPage() {
       clearInterval(intervalRef.current!);
     }
     return () => clearInterval(intervalRef.current!);
-  }, [running]);
+  }, [running, modeIdx, selectedTaskId, tasks]);
 
   const playDing = () => {
     try {
@@ -80,13 +138,44 @@ export default function FocusPage() {
   };
 
   const reset = () => { setRunning(false); setTimeLeft(mode.duration); };
+
+  const clearDay = () => {
+    setCompletedPomodoros(0);
+    setLogs([]);
+    saveStorage(0, []);
+  };
+
   const pct = ((mode.duration - timeLeft) / mode.duration) * 100;
   const circumference = 2 * Math.PI * 90;
+  const totalFocusMinutes = completedPomodoros * 25;
 
   return (
     <div className="p-4 md:p-6 max-w-xl mx-auto">
-      <h1 className="text-xl font-bold text-white mb-1">⏱ Focus Mode</h1>
-      <p className="text-slate-400 text-sm mb-5">Teknik Pomodoro untuk kerja fokus</p>
+      <div className="flex items-start justify-between mb-1">
+        <div>
+          <h1 className="text-xl font-bold text-white">⏱ Focus Mode</h1>
+          <p className="text-slate-400 text-sm">Teknik Pomodoro untuk kerja fokus</p>
+        </div>
+        {hydrated && completedPomodoros > 0 && (
+          <button onClick={clearDay} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+            Reset hari ini
+          </button>
+        )}
+      </div>
+
+      {/* Total focus time today */}
+      {hydrated && completedPomodoros > 0 && (
+        <div className="mb-5 mt-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-400">Total fokus hari ini</p>
+            <p className="text-lg font-bold text-red-400">{formatFocusTime(totalFocusMinutes)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-400">Pomodoro selesai</p>
+            <p className="text-2xl font-bold text-white">{completedPomodoros} 🍅</p>
+          </div>
+        </div>
+      )}
 
       {/* Mode selector */}
       <div className="flex gap-1 bg-slate-800/60 p-1 rounded-xl mb-6">
@@ -112,10 +201,11 @@ export default function FocusPage() {
             <span className={`text-5xl font-mono font-bold ${mode.color}`}>{formatTime(timeLeft)}</span>
             <span className="text-slate-400 text-sm mt-1">{mode.label}</span>
             {completedPomodoros > 0 && (
-              <div className="flex gap-1 mt-2">
-                {Array.from({ length: completedPomodoros % 4 || completedPomodoros }).map((_, i) => (
+              <div className="flex gap-1 mt-2 flex-wrap justify-center max-w-[100px]">
+                {Array.from({ length: Math.min(completedPomodoros, 8) }).map((_, i) => (
                   <span key={i} className="w-2 h-2 rounded-full bg-red-400" />
                 ))}
+                {completedPomodoros > 8 && <span className="text-[10px] text-red-400">+{completedPomodoros - 8}</span>}
               </div>
             )}
           </div>
@@ -143,19 +233,10 @@ export default function FocusPage() {
         </select>
       </div>
 
-      {/* Pomodoro count */}
-      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 mb-5">
-        <span className="text-sm text-slate-400">Pomodoro selesai hari ini</span>
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-bold text-white">{completedPomodoros}</span>
-          <span className="text-xs text-slate-500">sesi</span>
-        </div>
-      </div>
-
       {/* Session log */}
-      {logs.length > 0 && (
+      {hydrated && logs.length > 0 && (
         <div>
-          <h2 className="text-sm font-medium text-slate-400 mb-2">📝 Log Sesi</h2>
+          <h2 className="text-sm font-medium text-slate-400 mb-2">📝 Log Sesi Hari Ini</h2>
           <div className="space-y-1.5">
             {logs.map((log, i) => (
               <div key={i} className="flex items-center gap-3 text-sm">
