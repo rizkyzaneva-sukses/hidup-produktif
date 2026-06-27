@@ -15,10 +15,6 @@ export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
-export function generateId(): string {
-  return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-}
-
 export function parseJson(val: string | null | undefined, fallback: unknown = []): unknown {
   if (!val) return fallback;
   try { return JSON.parse(val); } catch { return fallback; }

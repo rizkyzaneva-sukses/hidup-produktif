@@ -3,8 +3,13 @@ export interface SessionData {
   username?: string;
 }
 
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret && process.env.NODE_ENV === 'production') {
+  throw new Error('SESSION_SECRET environment variable is required in production');
+}
+
 export const sessionOptions = {
-  password: process.env.SESSION_SECRET as string,
+  password: sessionSecret || 'dev-secret-dev-secret-dev-secret-32char',
   cookieName: 'hp-session',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
