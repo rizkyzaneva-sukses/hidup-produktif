@@ -77,8 +77,6 @@ export const SHOLAT_TIMES = {
 
 export const RECURRENCE_OPTIONS = ['Harian', 'Mingguan', 'Bulanan'];
 
-export const MOODS = ['Sangat Baik', 'Baik', 'Netral', 'Kurang Baik', 'Buruk'];
-
 export const TASK_TEMPLATES_DEFAULT = [
   {
     name: 'Rutinitas Pagi',
