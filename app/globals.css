@@ -65,3 +65,12 @@ html { scroll-behavior: smooth; }
 .animate-slide-in {
   animation: slide-in 0.2s ease-out;
 }
+
+/* Slide up animation for mobile bottom sheet */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}

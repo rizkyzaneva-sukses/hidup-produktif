@@ -12,7 +12,7 @@ function KeyBadge({ combo }: { combo: string }) {
     <span className="inline-flex items-center gap-0.5">
       {combo.split('+').map((k, i) => (
         <span key={i} className="inline-flex items-center gap-0.5">
-          {i > 0 && <span className="text-slate-600 text-[10px]">+</span>}
+          {i > 0 && <span className="text-slate-600 text-xs">+</span>}
           <kbd className="px-1.5 py-0.5 rounded bg-slate-700 border border-slate-600 text-slate-300 text-[11px] font-mono leading-none">{k}</kbd>
         </span>
       ))}
@@ -52,7 +52,7 @@ function KeyRecorder({ value, defaultKey, onChange, onReset }: { value: string; 
         )}
       </div>
       {value !== defaultKey && (
-        <button onClick={onReset} className="text-[10px] text-slate-600 hover:text-red-400 transition-colors">
+        <button onClick={onReset} className="text-xs text-slate-600 hover:text-red-400 transition-colors">
           reset
         </button>
       )}
@@ -103,7 +103,7 @@ function ShortcutsTab() {
                       <div className="min-w-0">
                         <p className="text-sm text-white flex items-center gap-2">
                           {s.label}
-                          {isModified && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">diubah</span>}
+                          {isModified && <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">diubah</span>}
                         </p>
                         <p className="text-xs text-slate-500">{s.description}</p>
                       </div>
@@ -186,12 +186,12 @@ export default function SettingsPage() {
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-white">⚙️ Settings</h1>
+        <h1 className="text-xl font-bold text-white">Settings</h1>
         <p className="text-slate-400 text-sm">Konfigurasi aplikasi</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800/50 p-1 rounded-xl border border-slate-700/50">
+      <div className="flex gap-1 bg-slate-800/50 p-1 rounded-lg border border-slate-700/50">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -280,7 +280,7 @@ export default function SettingsPage() {
 
           <Card>
             <CardContent>
-              <h2 className="font-semibold text-white mb-3">📖 Cara Setup Telegram Bot</h2>
+              <h2 className="font-semibold text-white mb-3">Cara Setup Telegram Bot</h2>
               <ol className="space-y-2 text-sm text-slate-400">
                 <li>1. Buka Telegram, cari <span className="text-blue-400">@BotFather</span></li>
                 <li>2. Kirim <code className="bg-slate-700 px-1 rounded">/newbot</code> → ikuti instruksi → dapatkan token</li>

@@ -138,7 +138,7 @@ function SubtaskEditor({ value, onChange }: { value: TaskNode[]; onChange: (v: T
           update(next);
           setTimeout(() => refs.current[items.length]?.focus(), 0);
         }}
-        className="w-full text-xs text-blue-400 hover:text-blue-300 border border-dashed border-slate-700 hover:border-blue-500/50 rounded-xl py-2 transition-colors"
+        className="w-full text-xs text-blue-400 hover:text-blue-300 border border-dashed border-slate-700 hover:border-blue-500/50 rounded-lg py-2 transition-colors"
       >
         + Tambah Utama
       </button>
@@ -196,7 +196,7 @@ export default function ProjectsPage() {
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">🗂 Proyek</h1>
+          <h1 className="text-lg font-semibold text-white">Proyek</h1>
           <p className="text-slate-400 text-sm">{projects.filter((p: any) => p.status === 'Aktif').length} aktif</p>
         </div>
         <div className="flex items-center gap-2">
@@ -209,7 +209,7 @@ export default function ProjectsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon="🗂" title="Belum ada proyek" desc="Buat proyek baru dengan tombol + Proyek" />
+        <EmptyState  title="Belum ada proyek" desc="Buat proyek baru dengan tombol + Proyek" />
       ) : (
         <div className="space-y-3">
           {filtered.map((p: any) => {
@@ -294,7 +294,7 @@ export default function ProjectsPage() {
           <Textarea value={createForm.description} onChange={e => setCreateForm(p => ({ ...p, description: e.target.value }))} rows={2} placeholder="Deskripsi (opsional)" />
           <div className="grid grid-cols-2 gap-2">
             <select value={createForm.role} onChange={e => setCreateForm(p => ({ ...p, role: e.target.value }))}
-              className="h-9 px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+              className="h-9 px-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50">
               {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
             <Input type="date" value={createForm.deadline} onChange={e => setCreateForm(p => ({ ...p, deadline: e.target.value }))} />
@@ -305,7 +305,7 @@ export default function ProjectsPage() {
           </div>
           <div className="flex gap-2">
             <Button onClick={() => { if (!createForm.name.trim()) return; create.mutate({ ...createForm, subtasks: createSubtasks }); }} disabled={create.isPending} className="flex-1">
-              {create.isPending ? 'Membuat...' : 'Buat Proyek'} <span className="ml-1 text-[10px] opacity-50">Ctrl+↵</span>
+              {create.isPending ? 'Membuat...' : 'Buat Proyek'} <span className="ml-1 text-xs opacity-50">Ctrl+↵</span>
             </Button>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Batal</Button>
           </div>
@@ -320,7 +320,7 @@ export default function ProjectsPage() {
             <Textarea value={editForm.description || ''} onChange={e => setEditForm((p: any) => ({ ...p, description: e.target.value }))} rows={2} placeholder="Deskripsi" />
             <div className="grid grid-cols-2 gap-2">
               <select value={editForm.role || 'CEO'} onChange={e => setEditForm((p: any) => ({ ...p, role: e.target.value }))}
-                className="h-9 px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                className="h-9 px-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50">
                 {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
               <Input type="date" value={editForm.deadline || ''} onChange={e => setEditForm((p: any) => ({ ...p, deadline: e.target.value }))} />
@@ -331,7 +331,7 @@ export default function ProjectsPage() {
             </div>
             <div className="flex gap-2">
               <Button onClick={() => update.mutate({ id: editItem.id, ...editForm, subtasks: editSubtasks })} disabled={update.isPending} className="flex-1">
-                {update.isPending ? 'Menyimpan...' : 'Simpan'} <span className="ml-1 text-[10px] opacity-50">Ctrl+↵</span>
+                {update.isPending ? 'Menyimpan...' : 'Simpan'} <span className="ml-1 text-xs opacity-50">Ctrl+↵</span>
               </Button>
               <Button variant="outline" onClick={() => setEditItem(null)}>Batal</Button>
             </div>

@@ -1,90 +1,60 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { QuickCaptureFAB } from '@/components/shared/QuickCaptureFAB';
 import { getEffectiveKey, matchesKeyCombo } from '@/lib/shortcuts';
+import {
+  Home, Target, ListTodo, Flame, Timer,
+  Lightbulb, Flag, Smile,
+  FolderKanban, BookOpen, Bell, CreditCard, BarChart3,
+  BookMarked, Settings, LogOut,
+  PanelLeftClose, PanelLeftOpen, X,
+  LayoutGrid, ChevronDown, Users,
+} from 'lucide-react';
 
-// ─── Navigation data ──────────────────────────────────────────────────────────
-
-/** Top 5 pinned items — always visible */
 const NAV_MAIN = [
-  { href: '/', icon: '🏠', label: 'Beranda' },
-  { href: '/sprint', icon: '🎯', label: 'Sprint' },
-  { href: '/tasks', icon: '✅', label: 'Tasks' },
-  { href: '/habits', icon: '🌟', label: 'Habits' },
-  { href: '/focus', icon: '⏱', label: 'Focus' },
+  { href: '/', icon: Home, label: 'Beranda' },
+  { href: '/sprint', icon: Target, label: 'Sprint' },
+  { href: '/tasks', icon: ListTodo, label: 'Tasks' },
+  { href: '/habits', icon: Flame, label: 'Habits' },
+  { href: '/focus', icon: Timer, label: 'Focus' },
 ];
 
-/** Icon-only quick actions — displayed as a horizontal row of small buttons */
-const QUICK_ACTIONS = [
-  { href: '/ideas', icon: '💡', label: 'Ide' },
-  { href: '/goals', icon: '📥', label: 'Goals' },
-  { href: '/mood', icon: '😊', label: 'Mood' },
+const NAV_QUICK = [
+  { href: '/ideas', icon: Lightbulb, label: 'Ideas' },
+  { href: '/goals', icon: Flag, label: 'Goals' },
+  { href: '/mood', icon: Smile, label: 'Mood' },
 ];
 
-/** Kelola section — collapsible, default collapsed */
 const NAV_KELOLA = [
-  { href: '/projects', icon: '🗂', label: 'Proyek' },
-  { href: '/learning', icon: '📚', label: 'Belajar' },
-  { href: '/reminders', icon: '🔔', label: 'Reminders' },
-  { href: '/subscriptions', icon: '💳', label: 'Langganan' },
-  { href: '/laporan', icon: '📊', label: 'Laporan' },
+  { href: '/projects', icon: FolderKanban, label: 'Proyek' },
+  { href: '/learning', icon: BookOpen, label: 'Belajar' },
+  { href: '/reminders', icon: Bell, label: 'Reminders' },
+  { href: '/subscriptions', icon: CreditCard, label: 'Langganan' },
+  { href: '/laporan', icon: BarChart3, label: 'Laporan' },
 ];
 
-/** Peran section — collapsible, default collapsed */
 const ROLES_NAV = [
-  { href: '/role/CEO', icon: '💼', label: 'CEO' },
-  { href: '/role/Suami', icon: '💑', label: 'Suami' },
-  { href: '/role/Ayah', icon: '👨‍👧‍👦', label: 'Ayah' },
-  { href: '/role/Anak', icon: '🤲', label: 'Anak' },
-  { href: '/role/Pelajar', icon: '📖', label: 'Pelajar' },
+  { href: '/role/CEO', label: 'CEO' },
+  { href: '/role/Suami', label: 'Suami' },
+  { href: '/role/Ayah', label: 'Ayah' },
+  { href: '/role/Anak', label: 'Anak' },
+  { href: '/role/Pelajar', label: 'Pelajar' },
 ];
 
-/** Mobile bottom nav — 5 items */
 const BOTTOM_NAV = [
-  { href: '/', icon: '🏠', label: 'Home' },
-  { href: '/sprint', icon: '🎯', label: 'Sprint' },
-  { href: '/tasks', icon: '✅', label: 'Tasks' },
-  { href: '/habits', icon: '🌟', label: 'Habits' },
-  { href: '/more', icon: '☰', label: 'Lainnya' },
+  { href: '/', icon: Home, label: 'Home' },
+  { href: '/sprint', icon: Target, label: 'Sprint' },
+  { href: '/tasks', icon: ListTodo, label: 'Tasks' },
+  { href: '/habits', icon: Flame, label: 'Habits' },
 ];
-
-// ─── Shared style helpers ──────────────────────────────────────────────────────
-
-function navItemClass(pathname: string, href: string, collapsed: boolean, mobile: boolean) {
-  return cn(
-    'flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-150',
-    pathname === href
-      ? 'bg-blue-600/20 text-blue-300 font-medium shadow-sm shadow-blue-500/10'
-      : 'text-slate-400 hover:bg-slate-800/80 hover:text-white',
-    collapsed && !mobile ? 'justify-center px-2' : '',
-  );
-}
-
-function sectionLabel(children: React.ReactNode, collapsed: boolean, mobile: boolean) {
-  if (collapsed && !mobile) return null;
-  return (
-    <div className="pb-1 px-3 pt-1">
-      <p className="text-[10px] text-slate-600 font-semibold uppercase tracking-wider">
-        {children}
-      </p>
-    </div>
-  );
-}
-
-function separator() {
-  return <div className="my-1.5 mx-2 border-t border-slate-700/40" />;
-}
-
-// ─── Component ─────────────────────────────────────────────────────────────────
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [kelolaOpen, setKelolaOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
 
@@ -95,7 +65,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     window.location.href = '/login';
   }
 
-  // Restore collapsed state from localStorage
   useEffect(() => {
     const val = localStorage.getItem('sidebar-collapsed');
     if (val === 'true') setCollapsed(true);
@@ -107,10 +76,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     localStorage.setItem('sidebar-collapsed', String(next));
   };
 
-  // Close mobile sidebar on route change
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => { setMoreOpen(false); }, [pathname]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const NAV_MAP: Record<string, string> = {
       'nav-home': '/', 'nav-sprint': '/sprint', 'nav-tasks': '/tasks',
@@ -132,335 +99,374 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // Highlight "More" on mobile when current path isn't in the 4 main bottom items
-  const isMoreActive =
-    !BOTTOM_NAV.slice(0, 4).some(item => pathname === item.href) && pathname !== '/';
+  const isMoreActive = !BOTTOM_NAV.some(item => pathname === item.href);
 
-  // ── Sidebar (shared between desktop & mobile overlay) ──────────────────────
+  // ── Desktop/Tablet sidebar ──────────────────────────────────────────────────
 
-  const Sidebar = ({ mobile = false }: { mobile?: boolean }) => {
-    const isCollapsed = collapsed && !mobile;
-
-    return (
+  const Sidebar = () => (
+    <aside className={cn(
+      'flex flex-col h-full bg-slate-950 border-r border-slate-800/80 transition-all duration-200',
+      collapsed ? 'w-[56px]' : 'w-[240px]',
+    )}>
+      {/* Logo */}
       <div className={cn(
-        'flex flex-col h-full bg-slate-900/95 backdrop-blur-md border-r border-slate-700/50',
-        mobile ? 'w-72' : collapsed ? 'w-16' : 'w-60',
-        'transition-all duration-200',
+        'flex items-center h-14 border-b border-slate-800/80 shrink-0',
+        collapsed ? 'justify-center px-2' : 'px-4',
       )}>
-        {/* ─── Logo ─────────────────────────────────────────── */}
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <span className="font-semibold text-sm text-white tracking-tight">Hidup Produktif</span>
+            <span className="text-amber-400 text-[11px] font-medium ml-1.5">Berkah</span>
+          </div>
+        )}
+        <button
+          onClick={toggleCollapse}
+          className="text-slate-500 hover:text-white p-1.5 rounded-md hover:bg-slate-800/80 transition-colors"
+          title={collapsed ? 'Expand' : 'Collapse'}
+        >
+          {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-2 px-2 no-scrollbar">
+        {/* Main nav */}
+        <div className="space-y-0.5">
+          {NAV_MAIN.map(item => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}
+                className={cn(
+                  'flex items-center gap-2.5 h-9 rounded-lg text-[13px] font-medium transition-colors',
+                  collapsed ? 'justify-center' : 'px-2.5',
+                  active
+                    ? 'bg-blue-500/10 text-blue-400'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800/60',
+                )}
+                title={collapsed ? item.label : undefined}
+              >
+                <Icon size={18} className="shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Quick actions */}
         <div className={cn(
-          'flex items-center gap-2 p-3 border-b border-slate-700/50',
-          isCollapsed && 'justify-center',
+          'py-1.5',
+          collapsed ? 'flex flex-col items-center gap-0.5' : 'flex items-center gap-0.5 px-0.5',
         )}>
-          <span className="text-xl flex-shrink-0">🕌</span>
-          {(!isCollapsed) && (
-            <div className="flex-1 min-w-0">
-              <span className="font-bold text-white text-sm leading-tight block">Hidup Produktif</span>
-              <span className="text-amber-400 text-[11px] font-semibold">Berkah</span>
-            </div>
-          )}
-          {!mobile && (
+          {NAV_QUICK.map(item => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}
+                className={cn(
+                  'flex items-center justify-center rounded-lg transition-colors',
+                  collapsed ? 'w-9 h-9' : 'h-8 flex-1',
+                  active ? 'text-blue-400 bg-blue-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/60',
+                )}
+                title={item.label}
+              >
+                <Icon size={16} strokeWidth={active ? 2.2 : 1.8} />
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="my-1.5 mx-1 border-t border-slate-800/60" />
+
+        {/* Kelola section */}
+        {collapsed ? (
+          <div className="flex justify-center py-0.5">
             <button
               onClick={toggleCollapse}
-              className="ml-auto text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
-              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="text-slate-600 hover:text-slate-400 p-1.5 rounded-lg transition-colors"
+              title="Kelola"
             >
-              {collapsed ? '→' : '←'}
+              <FolderKanban size={16} />
             </button>
-          )}
-          {mobile && (
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="ml-auto text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* ─── Scrollable nav area ──────────────────────────── */}
-        <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-
-          {/* === Top 5 pinned items === */}
-          {NAV_MAIN.map(item => (
-            <Link key={item.href} href={item.href}
-              className={navItemClass(pathname, item.href, collapsed, mobile)}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <span className="text-base flex-shrink-0">{item.icon}</span>
-              {!isCollapsed && <span>{item.label}</span>}
-            </Link>
-          ))}
-
-          {/* === Quick Actions — icon-only row === */}
-          {isCollapsed ? (
-            /* Collapsed: stack vertically like mini buttons */
-            <div className="flex flex-col items-center gap-1 pt-1 pb-0.5">
-              {QUICK_ACTIONS.map(item => (
-                <Link key={item.href} href={item.href}
-                  className={cn(
-                    'flex items-center justify-center w-9 h-9 rounded-lg text-base transition-all duration-150',
-                    pathname === item.href
-                      ? 'bg-blue-600/20 text-blue-300'
-                      : 'text-slate-500 hover:bg-slate-800/80 hover:text-slate-300',
-                  )}
-                  title={item.label}
-                >
-                  {item.icon}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            /* Expanded: horizontal row of icon buttons */
-            <div className="flex items-center justify-center gap-1.5 px-2 py-1.5">
-              {QUICK_ACTIONS.map(item => (
-                <Link key={item.href} href={item.href}
-                  className={cn(
-                    'flex items-center justify-center w-10 h-10 rounded-lg text-lg transition-all duration-150',
-                    pathname === item.href
-                      ? 'bg-blue-600/20 text-blue-300'
-                      : 'text-slate-500 hover:bg-slate-800/80 hover:text-slate-300',
-                  )}
-                  title={item.label}
-                >
-                  {item.icon}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {/* ── Divider ── */}
-          {separator()}
-
-          {/* === Kelola section (collapsible) === */}
-          {isCollapsed ? (
-            /* Collapsed: single icon, click to expand sidebar */
-            <div className="flex justify-center py-0.5">
-              <button
-                onClick={toggleCollapse}
-                className="text-slate-600 hover:text-slate-300 transition-colors"
-                title="Kelola — expand sidebar to access"
-              >
-                <span className="text-base">🗂</span>
-              </button>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={() => setKelolaOpen(v => !v)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 transition-colors"
-              >
-                <span className="text-xs">▾</span>
-                <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-wider">
-                  Kelola
-                </span>
-                <span className={cn(
-                  'text-[10px] transition-transform duration-200',
-                  kelolaOpen ? 'rotate-0' : '-rotate-90',
-                )}>
-                  ▸
-                </span>
-              </button>
-              {kelolaOpen && NAV_KELOLA.map(item => (
-                <Link key={item.href} href={item.href}
-                  className={cn(
-                    navItemClass(pathname, item.href, false, mobile),
-                    'pl-7',
-                  )}
-                >
-                  <span className="text-base flex-shrink-0">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-            </>
-          )}
-
-          {/* ── Divider ── */}
-          {separator()}
-
-          {/* === Peran section (collapsible) === */}
-          {isCollapsed ? (
-            <div className="flex justify-center py-0.5">
-              <button
-                onClick={toggleCollapse}
-                className="text-slate-600 hover:text-slate-300 transition-colors"
-                title="Peran — expand sidebar to access"
-              >
-                <span className="text-base">👑</span>
-              </button>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={() => setRolesOpen(v => !v)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm text-slate-500 hover:text-slate-300 hover:bg-slate-800/50 transition-colors"
-              >
-                <span className="text-xs">▾</span>
-                <span className="flex-1 text-left text-[10px] font-semibold uppercase tracking-wider">
-                  Peran
-                </span>
-                <span className={cn(
-                  'text-[10px] transition-transform duration-200',
-                  rolesOpen ? 'rotate-0' : '-rotate-90',
-                )}>
-                  ▸
-                </span>
-              </button>
-              {rolesOpen && ROLES_NAV.map(item => (
-                <Link key={item.href} href={item.href}
-                  className={cn(
-                    navItemClass(pathname, item.href, false, mobile),
-                    'pl-7',
-                  )}
-                >
-                  <span className="text-base flex-shrink-0">{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-            </>
-          )}
-        </nav>
-
-        {/* ─── Bottom pinned items ──────────────────────────── */}
-        <div className="p-2 border-t border-slate-700/50 space-y-0.5">
-          {/* Panduan */}
-          <Link href="/panduan"
-            className={cn(
-              'flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-150',
-              pathname === '/panduan'
-                ? 'bg-blue-600/20 text-blue-300 font-medium'
-                : 'text-slate-400 hover:bg-slate-800/80 hover:text-white',
-              isCollapsed && 'justify-center px-2',
-            )}
-            title={isCollapsed ? 'Panduan' : undefined}
-          >
-            <span className="text-base flex-shrink-0">📖</span>
-            {!isCollapsed && <span>Panduan</span>}
-          </Link>
-
-          {/* Settings */}
-          <Link href="/settings"
-            className={cn(
-              'flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-150',
-              pathname === '/settings'
-                ? 'bg-blue-600/20 text-blue-300 font-medium'
-                : 'text-slate-400 hover:bg-slate-800/80 hover:text-white',
-              isCollapsed && 'justify-center px-2',
-            )}
-            title={isCollapsed ? 'Settings' : undefined}
-          >
-            <span className="text-base flex-shrink-0">⚙️</span>
-            {!isCollapsed && <span>Settings</span>}
-          </Link>
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className={cn(
-              'w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-all duration-150',
-              'text-slate-400 hover:bg-red-500/10 hover:text-red-400',
-              isCollapsed && 'justify-center px-2',
-            )}
-            title={isCollapsed ? 'Logout' : undefined}
-          >
-            <span className="text-base flex-shrink-0">🚪</span>
-            {!isCollapsed && <span>Logout</span>}
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // ── Main render ────────────────────────────────────────────────────────────
-
-  return (
-    <div className="flex h-screen bg-slate-950 text-white overflow-hidden">
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex flex-shrink-0">
-        <Sidebar />
-      </div>
-
-      {/* Mobile/Tablet sidebar overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="relative z-10 flex-shrink-0 animate-slide-in">
-            <Sidebar mobile />
           </div>
-        </div>
-      )}
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top header for tablet */}
-        <div className="hidden md:flex lg:hidden items-center gap-3 px-4 py-3 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-md">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors"
-          >
-            <span className="text-xl">☰</span>
-          </button>
-          <span className="text-sm font-semibold text-white">Hidup Produktif Berkah</span>
-        </div>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-y-auto pb-20 md:pb-4">
-          {children}
-        </main>
-      </div>
-
-      {/* Mobile bottom navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden safe-bottom">
-        <div className="bg-slate-900/95 backdrop-blur-md border-t border-slate-700/50 px-2 py-1">
-          <div className="flex items-center justify-around">
-            {BOTTOM_NAV.map(item => {
-              const isActive = item.href === '/more'
-                ? isMoreActive
-                : pathname === item.href;
-
-              if (item.href === '/more') {
-                return (
-                  <button
-                    key={item.href}
-                    onClick={() => setMobileOpen(true)}
-                    className={cn(
-                      'flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-[60px]',
-                      isActive ? 'text-blue-400' : 'text-slate-500',
-                    )}
-                  >
-                    <span className="text-lg mb-0.5">{item.icon}</span>
-                    <span className="text-[10px] font-medium">{item.label}</span>
-                  </button>
-                );
-              }
-
+        ) : (
+          <div className="space-y-0.5">
+            <button
+              onClick={() => setKelolaOpen(v => !v)}
+              className="w-full flex items-center gap-2 px-2.5 h-8 rounded-lg text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-wider flex-1 text-left">Kelola</span>
+              <ChevronDown size={14} className={cn('transition-transform duration-200', kelolaOpen ? '' : '-rotate-90')} />
+            </button>
+            {kelolaOpen && NAV_KELOLA.map(item => {
+              const Icon = item.icon;
+              const active = pathname === item.href;
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
+                <Link key={item.href} href={item.href}
                   className={cn(
-                    'flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-[60px]',
-                    isActive ? 'text-blue-400' : 'text-slate-500 active:text-slate-300',
-                  )}
-                >
-                  <span className={cn('text-lg mb-0.5', isActive && 'scale-110')}>
-                    {item.icon}
-                  </span>
-                  <span className={cn('text-[10px] font-medium', isActive && 'text-blue-400')}>
-                    {item.label}
-                  </span>
-                  {isActive && (
-                    <span className="absolute -bottom-0.5 w-5 h-0.5 bg-blue-400 rounded-full" />
-                  )}
+                    'flex items-center gap-2.5 h-8 pl-4 pr-2.5 rounded-lg text-[13px] transition-colors',
+                    active ? 'bg-blue-500/10 text-blue-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/60',
+                  )}>
+                  <Icon size={16} className="shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                  <span>{item.label}</span>
                 </Link>
               );
             })}
           </div>
+        )}
+
+        <div className="my-1.5 mx-1 border-t border-slate-800/60" />
+
+        {/* Peran section */}
+        {collapsed ? (
+          <div className="flex justify-center py-0.5">
+            <button
+              onClick={toggleCollapse}
+              className="text-slate-600 hover:text-slate-400 p-1.5 rounded-lg transition-colors"
+              title="Peran"
+            >
+              <Users size={16} />
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-0.5">
+            <button
+              onClick={() => setRolesOpen(v => !v)}
+              className="w-full flex items-center gap-2 px-2.5 h-8 rounded-lg text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-wider flex-1 text-left">Peran</span>
+              <ChevronDown size={14} className={cn('transition-transform duration-200', rolesOpen ? '' : '-rotate-90')} />
+            </button>
+            {rolesOpen && ROLES_NAV.map(item => {
+              const active = pathname === item.href;
+              return (
+                <Link key={item.href} href={item.href}
+                  className={cn(
+                    'flex items-center gap-2.5 h-8 pl-4 pr-2.5 rounded-lg text-[13px] transition-colors',
+                    active ? 'bg-blue-500/10 text-blue-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/60',
+                  )}>
+                  <span className={cn(
+                    'w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold shrink-0',
+                    active ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-500',
+                  )}>
+                    {item.label.charAt(0)}
+                  </span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </nav>
+
+      {/* Bottom actions */}
+      <div className="border-t border-slate-800/80 p-2 space-y-0.5 shrink-0">
+        <Link href="/panduan"
+          className={cn(
+            'flex items-center gap-2.5 h-9 rounded-lg text-[13px] transition-colors',
+            collapsed ? 'justify-center' : 'px-2.5',
+            pathname === '/panduan' ? 'bg-blue-500/10 text-blue-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/60',
+          )}
+          title={collapsed ? 'Panduan' : undefined}
+        >
+          <BookMarked size={18} className="shrink-0" />
+          {!collapsed && <span>Panduan</span>}
+        </Link>
+        <Link href="/settings"
+          className={cn(
+            'flex items-center gap-2.5 h-9 rounded-lg text-[13px] transition-colors',
+            collapsed ? 'justify-center' : 'px-2.5',
+            pathname === '/settings' ? 'bg-blue-500/10 text-blue-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/60',
+          )}
+          title={collapsed ? 'Settings' : undefined}
+        >
+          <Settings size={18} className="shrink-0" />
+          {!collapsed && <span>Settings</span>}
+        </Link>
+        <button
+          onClick={handleLogout}
+          className={cn(
+            'w-full flex items-center gap-2.5 h-9 rounded-lg text-[13px] transition-colors text-slate-500 hover:text-red-400 hover:bg-red-500/5',
+            collapsed ? 'justify-center' : 'px-2.5',
+          )}
+          title={collapsed ? 'Logout' : undefined}
+        >
+          <LogOut size={18} className="shrink-0" />
+          {!collapsed && <span>Logout</span>}
+        </button>
+      </div>
+    </aside>
+  );
+
+  // ── Main render ─────────────────────────────────────────────────────────────
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-slate-950 text-white">
+      {/* Desktop/Tablet sidebar */}
+      <div className="hidden md:flex shrink-0">
+        <Sidebar />
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
+          {children}
+        </main>
+      </div>
+
+      {/* Mobile bottom tab bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden safe-bottom">
+        <div className="bg-slate-950/95 backdrop-blur-md border-t border-slate-800/80">
+          <div className="flex items-center h-14 max-w-lg mx-auto">
+            {BOTTOM_NAV.map(item => {
+              const Icon = item.icon;
+              const active = pathname === item.href;
+              return (
+                <Link key={item.href} href={item.href}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors relative',
+                    active ? 'text-blue-400' : 'text-slate-500',
+                  )}>
+                  <Icon size={20} strokeWidth={active ? 2.2 : 1.6} />
+                  <span className="text-xs font-medium">{item.label}</span>
+                  {active && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-400 rounded-full" />}
+                </Link>
+              );
+            })}
+            {/* More button */}
+            <button
+              onClick={() => setMoreOpen(true)}
+              className={cn(
+                'flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors relative',
+                isMoreActive || moreOpen ? 'text-blue-400' : 'text-slate-500',
+              )}
+            >
+              <LayoutGrid size={20} strokeWidth={1.6} />
+              <span className="text-xs font-medium">More</span>
+              {isMoreActive && !moreOpen && <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-400 rounded-full" />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Mobile "More" bottom sheet */}
+      {moreOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMoreOpen(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-slate-900 rounded-t-xl border-t border-slate-800 animate-slide-up safe-bottom max-h-[85vh] overflow-y-auto">
+            {/* Handle + close */}
+            <div className="sticky top-0 bg-slate-900 rounded-t-xl z-10">
+              <div className="flex items-center justify-between px-5 pt-3 pb-2">
+                <div className="flex justify-center flex-1">
+                  <div className="w-10 h-1 bg-slate-700 rounded-full" />
+                </div>
+                <button onClick={() => setMoreOpen(false)} className="text-slate-500 hover:text-white p-1 rounded-lg">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Quick access grid */}
+            <div className="px-5 pb-4">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Quick</p>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  ...NAV_QUICK,
+                  { href: '/focus', icon: Timer, label: 'Focus' },
+                ].map(item => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href;
+                  return (
+                    <Link key={item.href} href={item.href}
+                      className={cn(
+                        'flex flex-col items-center gap-1.5 py-3 rounded-lg transition-colors',
+                        active ? 'bg-blue-500/10 text-blue-400' : 'text-slate-400 active:bg-slate-800',
+                      )}>
+                      <Icon size={22} strokeWidth={1.6} />
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mx-5 border-t border-slate-800/60" />
+
+            {/* Kelola list */}
+            <div className="px-5 py-4">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Kelola</p>
+              <div className="space-y-0.5">
+                {NAV_KELOLA.map(item => {
+                  const Icon = item.icon;
+                  const active = pathname === item.href;
+                  return (
+                    <Link key={item.href} href={item.href}
+                      className={cn(
+                        'flex items-center gap-3 h-11 px-3 rounded-lg text-sm font-medium transition-colors',
+                        active ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 active:bg-slate-800',
+                      )}>
+                      <Icon size={18} className={cn('shrink-0', active ? 'text-blue-400' : 'text-slate-500')} strokeWidth={1.6} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mx-5 border-t border-slate-800/60" />
+
+            {/* Peran chips */}
+            <div className="px-5 py-4">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Peran</p>
+              <div className="flex flex-wrap gap-2">
+                {ROLES_NAV.map(item => {
+                  const active = pathname === item.href;
+                  return (
+                    <Link key={item.href} href={item.href}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors',
+                        active
+                          ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/30'
+                          : 'text-slate-300 bg-slate-800/60 active:bg-slate-800',
+                      )}>
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mx-5 border-t border-slate-800/60" />
+
+            {/* Settings & logout */}
+            <div className="px-5 py-4 pb-8 space-y-0.5">
+              <Link href="/panduan"
+                className={cn(
+                  'flex items-center gap-3 h-11 px-3 rounded-lg text-sm font-medium transition-colors',
+                  pathname === '/panduan' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 active:bg-slate-800',
+                )}>
+                <BookMarked size={18} className="text-slate-500 shrink-0" />
+                <span>Panduan</span>
+              </Link>
+              <Link href="/settings"
+                className={cn(
+                  'flex items-center gap-3 h-11 px-3 rounded-lg text-sm font-medium transition-colors',
+                  pathname === '/settings' ? 'bg-blue-500/10 text-blue-400' : 'text-slate-300 active:bg-slate-800',
+                )}>
+                <Settings size={18} className="text-slate-500 shrink-0" />
+                <span>Settings</span>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 h-11 px-3 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 active:bg-red-500/5 transition-colors"
+              >
+                <LogOut size={18} className="shrink-0" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <QuickCaptureFAB />
     </div>

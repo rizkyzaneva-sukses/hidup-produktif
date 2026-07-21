@@ -66,7 +66,7 @@ export default function IdeasPage() {
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">💡 Parkir Ide</h1>
+          <h1 className="text-lg font-semibold text-white">Parkir Ide</h1>
           <p className="text-slate-400 text-sm">{ideas.filter((i: any) => i.status === 'Mentah').length} ide belum diproses</p>
         </div>
       </div>
@@ -89,11 +89,11 @@ export default function IdeasPage() {
 
       {/* Ideas list */}
       {filtered.length === 0 ? (
-        <EmptyState icon="💡" title="Belum ada ide" desc="Tekan Ctrl+Q untuk parkir ide baru" />
+        <EmptyState  title="Belum ada ide" desc="Tekan Ctrl+Q untuk parkir ide baru" />
       ) : (
         <div className="space-y-2">
           {filtered.map((idea: any) => (
-            <div key={idea.id} className={`p-3 rounded-xl border transition-colors ${selectedIds.includes(idea.id) ? 'border-blue-500/50 bg-blue-500/5' : 'border-slate-700/50 bg-slate-800/40'}`}>
+            <div key={idea.id} className={`p-3 rounded-lg border transition-colors ${selectedIds.includes(idea.id) ? 'border-blue-500/50 bg-blue-500/5' : 'border-slate-700/50 bg-slate-800/40'}`}>
               <div className="flex items-start gap-3">
                 <input type="checkbox" checked={selectedIds.includes(idea.id)} onChange={() => toggleSelect(idea.id)} className="mt-1 w-4 h-4 accent-blue-500" />
                 <div className="flex-1 min-w-0">
@@ -122,7 +122,7 @@ export default function IdeasPage() {
 
       {/* Bulk actions */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl z-30">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 flex items-center gap-3 shadow-xl z-30">
           <span className="text-sm text-white">{selectedIds.length} terpilih</span>
           <Button size="sm" onClick={bulkConvertToTask}>→ Jadikan Task</Button>
           <Button size="sm" variant="destructive" onClick={bulkDelete}>🗑 Hapus</Button>

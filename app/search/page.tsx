@@ -57,7 +57,7 @@ export default function SearchPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto space-y-4">
       <div>
-        <h1 className="text-lg sm:text-xl font-bold text-white">🔍 Pencarian</h1>
+        <h1 className="text-lg font-semibold text-white">Pencarian</h1>
         <p className="text-slate-400 text-xs sm:text-sm">Cari task, ide, proyek, atau log belajar</p>
       </div>
 
@@ -70,7 +70,7 @@ export default function SearchPage() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           autoFocus
-          className="w-full h-10 sm:h-11 pl-9 pr-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
+          className="w-full h-10 sm:h-11 pl-9 pr-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
         />
         {query && (
           <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs">✕</button>
@@ -78,7 +78,7 @@ export default function SearchPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800/60 p-1 rounded-xl overflow-x-auto no-scrollbar">
+      <div className="flex gap-1 bg-slate-800/60 p-1 rounded-lg overflow-x-auto no-scrollbar">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${tab === t.key ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
@@ -90,13 +90,13 @@ export default function SearchPage() {
 
       {/* Results */}
       {!enabled ? (
-        <EmptyState icon="🔍" title="Mulai mencari" desc="Ketik kata kunci untuk mencari" />
+        <EmptyState  title="Mulai mencari" desc="Ketik kata kunci untuk mencari" />
       ) : loading ? (
         <div className="flex justify-center py-12">
           <div className="w-6 h-6 border-2 border-slate-700 border-t-blue-500 rounded-full animate-spin" />
         </div>
       ) : resultCount === 0 ? (
-        <EmptyState icon="😅" title="Tidak ditemukan" desc={`Tidak ada hasil untuk "${q}"`} />
+        <EmptyState  title="Tidak ditemukan" desc={`Tidak ada hasil untuk "${q}"`} />
       ) : (
         <div className="space-y-2">
           <p className="text-xs text-slate-500">{resultCount} hasil ditemukan</p>
@@ -113,9 +113,9 @@ export default function SearchPage() {
                       <div className="flex flex-wrap gap-1 mt-1">
                         <RoleBadge role={t.role} />
                         <WorkTypeBadge type={t.work_type} />
-                        {t.project_name && <span className="text-[10px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-md">📁 {t.project_name}</span>}
+                        {t.project_name && <span className="text-xs text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-md">📁 {t.project_name}</span>}
                         {t.due_date && (
-                          <span className={`text-[10px] ${isOverdue(t.due_date) ? 'text-red-400' : 'text-slate-500'}`}>
+                          <span className={`text-xs ${isOverdue(t.due_date) ? 'text-red-400' : 'text-slate-500'}`}>
                             📅 {formatDateShort(t.due_date)}
                           </span>
                         )}
@@ -137,7 +137,7 @@ export default function SearchPage() {
                   <div className="flex flex-wrap gap-1 mt-1">
                     <RoleBadge role={idea.role} />
                     <Badge variant={idea.status === 'Mentah' ? 'slate' : idea.status === 'Diproses' ? 'warning' : 'success'}>{idea.status}</Badge>
-                    <span className="text-[10px] text-slate-500">{idea.category}</span>
+                    <span className="text-xs text-slate-500">{idea.category}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -169,7 +169,7 @@ export default function SearchPage() {
                   <div className="flex flex-wrap gap-1 mt-1">
                     <Badge>{log.type}</Badge>
                     {log.category && <Badge variant="purple">{log.category.emoji} {log.category.name}</Badge>}
-                    {log.duration_minutes && <span className="text-[10px] text-slate-500">⏱ {log.duration_minutes}m</span>}
+                    {log.duration_minutes && <span className="text-xs text-slate-500">⏱ {log.duration_minutes}m</span>}
                     {log.finished && <Badge variant="success">Selesai</Badge>}
                   </div>
                 </CardContent>
