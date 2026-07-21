@@ -22,11 +22,14 @@ export async function GET(req: NextRequest) {
     const showArchived = searchParams.get('archived') === 'true';
 
     if (dueSoon) {
-      const target = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const target = new Date(today);
       target.setDate(target.getDate() + 7);
+      const todayStr = today.toISOString().split('T')[0];
       const targetStr = target.toISOString().split('T')[0];
       const subs = await prisma.subscription.findMany({
-        where: { status: 'Aktif', archived: false, tanggalRenewal: targetStr },
+        where: { status: 'Aktif', archived: false, AND: [{ tanggalRenewal: { gte: todayStr } }, { tanggalRenewal: { lte: targetStr } }] },
       });
       return NextResponse.json(subs.map(mapSub));
     }

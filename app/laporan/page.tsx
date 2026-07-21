@@ -1,6 +1,6 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, subDays } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { ROLES } from '@/lib/constants';
@@ -31,7 +31,8 @@ export default function LaporanPage() {
   });
 
   // Load existing notes
-  useState(() => { if (weeklyReview?.reflection_notes) setNotes(weeklyReview.reflection_notes); });
+  // Load existing review notes when data arrives (useEffect, not useState)
+  useEffect(() => { if (weeklyReview?.reflection_notes) setNotes(weeklyReview.reflection_notes); }, [weeklyReview?.reflection_notes]);
 
   // Week range
   const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');

@@ -91,6 +91,29 @@ export default function LoginPage() {
               {loading ? 'Memproses...' : 'Masuk'}
             </button>
           </form>
+          <div className="mt-4 text-center">
+            <p className="text-slate-500 text-xs">
+              Belum punya akun?{' '}
+              <button
+                onClick={() => {
+                  const u = prompt('Username (min. 3 karakter):');
+                  if (!u || u.length < 3) return;
+                  const p = prompt('Password (min. 6 karakter):');
+                  if (!p || p.length < 6) return;
+                  const n = prompt('Nama lengkap (opsional, Enter untuk skip):');
+                  fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u.toLowerCase().trim(), password: p, nama: n || undefined }),
+                  }).then(r => r.json()).then(d => {
+                    if (d.ok) { window.location.href = '/'; }
+                    else { alert(d.error || 'Gagal register'); }
+                  });
+                }}
+                className="text-blue-400 hover:text-blue-300 transition-colors"
+              >Daftar sekarang</button>
+            </p>
+          </div>
         </div>
       </div>
     </div>

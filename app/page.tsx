@@ -282,7 +282,13 @@ export default function HomePage() {
                       <span className="text-xs sm:text-sm font-medium text-white truncate">{role}</span>
                     </div>
                     <p className="text-[10px] sm:text-xs text-slate-400 mb-1.5">{done}/{total} selesai</p>
-                    <ProgressBar value={done} max={total || 1} colorClass={`bg-${cfg?.color || 'blue'}-500`} />
+                    <ProgressBar value={done} max={total || 1} colorClass={
+                      cfg?.color === 'pink' ? 'bg-pink-500' :
+                      cfg?.color === 'green' ? 'bg-green-500' :
+                      cfg?.color === 'purple' ? 'bg-purple-500' :
+                      cfg?.color === 'amber' ? 'bg-amber-500' :
+                      'bg-blue-500'
+                    } />
                   </CardContent>
                 </Card>
               </Link>
@@ -292,7 +298,7 @@ export default function HomePage() {
       </div>
 
       {showEod && sprint && (
-        <EODModal sprint={sprint} onClose={() => { setShowEod(false); qc.invalidateQueries({ queryKey: ['home-sprint', today] }); }} />
+        <EODModal sprint={sprint} liveTasks={tasks} onClose={() => { setShowEod(false); qc.invalidateQueries({ queryKey: ['home-sprint', today] }); }} />
       )}
     </div>
   );

@@ -151,7 +151,7 @@ export default function SprintPage() {
         )}
 
         {showEod && todaySprint && (
-          <EODModal sprint={todaySprint} onClose={() => { setShowEod(false); qc.invalidateQueries({ queryKey: ['sprint', today] }); }} />
+          <EODModal sprint={todaySprint} liveTasks={allTasks} onClose={() => { setShowEod(false); qc.invalidateQueries({ queryKey: ['sprint', today] }); }} />
         )}
       </div>
     );
@@ -273,7 +273,7 @@ export default function SprintPage() {
       </div>
 
       {showEod && yesterdaySprint && (
-        <EODModal sprint={yesterdaySprint} onClose={() => { setShowEod(false); qc.invalidateQueries({ queryKey: ['sprint', yesterday] }); }} />
+        <EODModal sprint={yesterdaySprint} liveTasks={allTasks} onClose={() => { setShowEod(false); qc.invalidateQueries({ queryKey: ['sprint', yesterday] }); }} />
       )}
     </div>
   );

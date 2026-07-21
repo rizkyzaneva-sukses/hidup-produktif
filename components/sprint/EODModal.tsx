@@ -6,16 +6,21 @@ import { Dialog, Button, Textarea } from '@/components/ui';
 const EOD_STATUSES = ['Selesai', 'Sebagian — lanjut besok', 'Tidak dikerjakan'];
 
 interface EODModalProps { sprint: any; onClose: () => void; }
-
-export function EODModal({ sprint, onClose }: EODModalProps) {
+interface EODModalProps { sprint: any; onClose: () => void; liveTasks?: any[]; }
+export function EODModal({ sprint, onClose, liveTasks }: EODModalProps) {
   const qc = useQueryClient();
   const tasks: any[] = sprint.tasks || [];
+
+  // Build a lookup for live task completion status
+  const taskMap = new Map<string, any>();
+  for (const lt of (liveTasks || [])) taskMap.set(lt.id, lt);
 
   const [statuses, setStatuses] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     for (const t of tasks) {
       const existing = sprint.eod_task_statuses?.find((s: any) => s.task_id === t.task_id);
-      init[t.task_id] = existing?.status || (t.completed ? 'Selesai' : '');
+      const liveTask = taskMap.get(t.task_id);
+      init[t.task_id] = existing?.status || (liveTask?.completed ? 'Selesai' : '');
     }
     return init;
   });
