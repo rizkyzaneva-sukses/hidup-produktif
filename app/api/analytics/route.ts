@@ -163,7 +163,7 @@ export async function GET(req: NextRequest) {
 
     const dailyMap: Record<string, number> = {};
     for (const t of completedTasks) {
-      const day = t.updatedAt.split('T')[0];
+      const day = t.updatedAt instanceof Date ? t.updatedAt.toISOString().split('T')[0] : String(t.updatedAt).split('T')[0];
       dailyMap[day] = (dailyMap[day] || 0) + 1;
     }
     const dailyTrend = Object.entries(dailyMap)
