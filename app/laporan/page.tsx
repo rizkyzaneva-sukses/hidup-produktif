@@ -62,16 +62,16 @@ export default function LaporanPage() {
 
   const TABS = [
     { key: 'mingguan', label: '📋 Mingguan' },
-    { key: 'tren', label: '📊 Tren' },
+    { key: 'tren', label: 'Tren' },
     { key: 'riwayat', label: '📅 Riwayat Sprint' },
   ] as const;
 
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
-      <h1 className="text-xl font-bold text-white">📊 Laporan & Review</h1>
+      <h1 className="text-lg font-semibold text-white">Laporan & Review</h1>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-800/60 p-1 rounded-xl">
+      <div className="flex gap-1 bg-slate-800/60 p-1 rounded-lg">
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.key ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}>
@@ -88,7 +88,7 @@ export default function LaporanPage() {
           {/* Task by role */}
           <Card>
             <CardContent>
-              <h2 className="font-medium text-white mb-3">✅ Task per Peran</h2>
+              <h2 className="font-medium text-white mb-3">Task per Peran</h2>
               <div className="space-y-3">
                 {roleStats.map(({ role, done, total }) => (
                   <div key={role}>
@@ -106,7 +106,7 @@ export default function LaporanPage() {
           {/* Habit summary */}
           <Card>
             <CardContent>
-              <h2 className="font-medium text-white mb-2">🌟 Habit Summary</h2>
+              <h2 className="font-medium text-white mb-2">Habit Summary</h2>
               <p className="text-slate-400 text-sm">{habitDays}/7 hari dengan ≥6 habit selesai</p>
               <ProgressBar value={habitDays} max={7} colorClass="bg-green-500" className="mt-2" />
             </CardContent>
@@ -116,7 +116,7 @@ export default function LaporanPage() {
           {mentahIdeas.length > 0 && (
             <Card>
               <CardContent>
-                <h2 className="font-medium text-white mb-2">💡 Ide Belum Diproses ({ideas.filter((i: any) => i.status === 'Mentah').length})</h2>
+                <h2 className="font-medium text-white mb-2">Ide Belum Diproses ({ideas.filter((i: any) => i.status === 'Mentah').length})</h2>
                 <div className="space-y-1">
                   {mentahIdeas.map((i: any) => (
                     <p key={i.id} className="text-sm text-slate-400">• {i.title}</p>
@@ -129,7 +129,7 @@ export default function LaporanPage() {
           {/* Reflection */}
           <Card>
             <CardContent>
-              <h2 className="font-medium text-white mb-3">✍️ Refleksi Mingguan</h2>
+              <h2 className="font-medium text-white mb-3">Refleksi Mingguan</h2>
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} placeholder="Apa yang berjalan baik minggu ini? Apa yang bisa diperbaiki?" />
               <Button onClick={() => saveReview.mutate()} className="w-full mt-3">
                 {saveReview.isPending ? 'Menyimpan...' : 'Simpan Refleksi'}
@@ -146,7 +146,7 @@ export default function LaporanPage() {
           {/* Habit 7-day grid */}
           <Card>
             <CardContent>
-              <h2 className="font-medium text-white mb-3">🌟 Habit — 7 Hari Terakhir</h2>
+              <h2 className="font-medium text-white mb-3">Habit — 7 Hari Terakhir</h2>
               <div className="space-y-2">
                 {(habits as any[]).filter((h: any) => h.active).map((h: any) => {
                   const days7 = Array.from({ length: 7 }, (_, i) => {
@@ -203,7 +203,7 @@ export default function LaporanPage() {
               <Card>
                 <CardContent>
                   <div className="flex items-start justify-between mb-3">
-                    <h2 className="font-medium text-white">📚 Learning — 30 Hari Terakhir</h2>
+                    <h2 className="font-medium text-white">Learning — 30 Hari Terakhir</h2>
                     <div className="text-right">
                       <p className="text-lg font-bold text-blue-400">{totalH}j {totalM}m</p>
                       <p className="text-xs text-slate-500">{finishedCount} selesai</p>
@@ -213,9 +213,9 @@ export default function LaporanPage() {
                   <div className="flex items-end gap-2 h-16">
                     {weeklyHours.map((w) => (
                       <div key={w.label} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-slate-400">{w.hours}j</span>
+                        <span className="text-xs text-slate-400">{w.hours}j</span>
                         <div className="w-full rounded-t bg-blue-500/70 transition-all" style={{ height: `${(w.minutes / maxH) * 40 + 4}px` }} />
-                        <span className="text-[10px] text-slate-500">{w.label}</span>
+                        <span className="text-xs text-slate-500">{w.label}</span>
                       </div>
                     ))}
                   </div>
@@ -237,14 +237,14 @@ export default function LaporanPage() {
             return (
               <Card>
                 <CardContent>
-                  <h2 className="font-medium text-white mb-3">🎯 Sprint — Bulan Ini</h2>
+                  <h2 className="font-medium text-white mb-3">Sprint — Bulan Ini</h2>
                   <div className="grid grid-cols-3 gap-3 mb-3">
                     {[
                       { label: 'Sprint', value: monthSp.length },
                       { label: 'Ditutup', value: withEod },
                       { label: 'Task Selesai', value: totalTasksDone },
                     ].map(s => (
-                      <div key={s.label} className="bg-slate-700/40 rounded-xl p-3 text-center">
+                      <div key={s.label} className="bg-slate-700/40 rounded-lg p-3 text-center">
                         <p className="text-xl font-bold text-white">{s.value}</p>
                         <p className="text-xs text-slate-400">{s.label}</p>
                       </div>
@@ -263,7 +263,7 @@ export default function LaporanPage() {
           {/* Task & Ideas summary */}
           <Card>
             <CardContent>
-              <h2 className="font-medium text-white mb-3">📊 Ringkasan Umum</h2>
+              <h2 className="font-medium text-white mb-3">Ringkasan Umum</h2>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Total Task', value: tasks.length, color: 'text-blue-400' },
@@ -271,7 +271,7 @@ export default function LaporanPage() {
                   { label: 'Total Ide', value: ideas.length, color: 'text-amber-400' },
                   { label: 'Ide Dieksekusi', value: (ideas as any[]).filter((i: any) => i.status === 'Dieksekusi').length, color: 'text-purple-400' },
                 ].map(s => (
-                  <div key={s.label} className="bg-slate-700/40 rounded-xl p-3 text-center">
+                  <div key={s.label} className="bg-slate-700/40 rounded-lg p-3 text-center">
                     <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
                     <p className="text-xs text-slate-400">{s.label}</p>
                   </div>
@@ -307,7 +307,7 @@ export default function LaporanPage() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-white">{format(new Date(s.date), 'EEE, d MMM', { locale: id })}</span>
                             {s.energy_level && <Badge>⚡ {s.energy_level}/5</Badge>}
-                            {s.eod_submitted_at && <Badge variant="success">EOD ✅</Badge>}
+                            {s.eod_submitted_at && <Badge variant="success">EOD</Badge>}
                           </div>
                           {tasks.length > 0 && <p className="text-xs text-slate-500 mt-0.5">{done}/{tasks.length} task selesai</p>}
                         </div>

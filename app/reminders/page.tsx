@@ -43,12 +43,12 @@ function ReminderForm({ data, setData, onSave, onClose }: {
       </div>
       <p className="text-xs text-slate-500">
         {data.frequency === 'Harian'
-          ? '🔁 Dikirim setiap hari pukul 07:00 WIB sampai dimatikan'
+          ? 'Dikirim setiap hari pukul 07:00 WIB sampai dimatikan'
           : data.frequency === 'Sekali'
-          ? '📅 Dikirim sekali pada tanggal yang dipilih'
+          ? 'Dikirim sekali pada tanggal yang dipilih'
           : data.frequency === 'Mingguan'
-          ? '📅 Dikirim tiap minggu pada hari yang sama dengan tanggal dipilih'
-          : '📅 Dikirim tiap bulan pada tanggal yang sama'}
+          ? 'Dikirim tiap minggu pada hari yang sama dengan tanggal dipilih'
+          : 'Dikirim tiap bulan pada tanggal yang sama'}
       </p>
       <div className="flex gap-2">
         <Button onClick={() => onSave(data)} disabled={!data.title.trim()} className="flex-1">Simpan</Button>
@@ -107,7 +107,7 @@ export default function RemindersPage() {
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">🔔 Reminders</h1>
+          <h1 className="text-lg font-semibold text-white">Reminders</h1>
           <p className="text-slate-400 text-sm">{activeCount} aktif · Notifikasi via Telegram</p>
         </div>
         <div className="flex gap-2">
@@ -119,22 +119,22 @@ export default function RemindersPage() {
       </div>
 
       {reminders.length === 0
-        ? <EmptyState icon={showArchived ? '📦' : '🔔'} title={showArchived ? 'Belum ada arsip' : 'Belum ada reminder'} desc={showArchived ? 'Reminder yang diarsipkan akan muncul di sini' : 'Tambah reminder dan terima notifikasi di Telegram'} />
+        ? <EmptyState  title={showArchived ? 'Belum ada arsip' : 'Belum ada reminder'} desc={showArchived ? 'Reminder yang diarsipkan akan muncul di sini' : 'Tambah reminder dan terima notifikasi di Telegram'} />
         : (
           <div className="space-y-2">
             {reminders.map((r: any) => {
               const overdue = isOverdue(r) && r.frequency === 'Sekali';
               return (
-                <div key={r.id} className={`flex items-center gap-3 p-3 rounded-xl border ${overdue ? 'border-red-500/50 bg-red-500/5' : 'border-slate-700/50 bg-slate-800/40'}`}>
+                <div key={r.id} className={`flex items-center gap-3 p-3 rounded-lg border ${overdue ? 'border-red-500/50 bg-red-500/5' : 'border-slate-700/50 bg-slate-800/40'}`}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className={`text-sm font-medium ${r.active ? 'text-white' : 'text-slate-500'}`}>{r.title}</p>
-                      {overdue && <Badge variant="danger">⚠️ Terlewat</Badge>}
+                      {overdue && <Badge variant="danger">Terlewat</Badge>}
                     </div>
                     <div className="flex flex-wrap gap-1.5 mt-1">
                       <RoleBadge role={r.role} />
                       <Badge variant={FREQ_COLORS[r.frequency]}>{r.frequency}</Badge>
-                      {r.date && <span className={`text-xs ${overdue ? 'text-red-400' : 'text-slate-500'}`}>📅 {r.date}</span>}
+                      {r.date && <span className={`text-xs ${overdue ? 'text-red-400' : 'text-slate-500'}`}>{r.date}</span>}
                     </div>
                   </div>
                   {showArchived ? (
@@ -164,7 +164,7 @@ export default function RemindersPage() {
           </div>
         )}
 
-      <Dialog open={showForm} onClose={() => setShowForm(false)} title="🔔 Tambah Reminder">
+      <Dialog open={showForm} onClose={() => setShowForm(false)} title="Tambah Reminder">
         <ReminderForm data={form} setData={setForm} onSave={(d) => create.mutate(d)} onClose={() => setShowForm(false)} />
       </Dialog>
 

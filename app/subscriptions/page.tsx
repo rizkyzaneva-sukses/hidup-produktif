@@ -20,11 +20,11 @@ function getDaysUntilRenewal(dateStr: string): number {
 
 function RenewalBadge({ dateStr }: { dateStr: string }) {
   const days = getDaysUntilRenewal(dateStr);
-  if (days < 0) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">Lewat</span>;
-  if (days === 0) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-600 text-white font-bold animate-pulse">HARI INI</span>;
-  if (days === 1) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/80 text-white font-bold">🚨 BESOK</span>;
-  if (days <= 3) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/80 text-white font-semibold">🔴 H-{days}</span>;
-  if (days <= 7) return <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/70 text-white">⚠️ H-{days}</span>;
+  if (days < 0) return <span className="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">Lewat</span>;
+  if (days === 0) return <span className="text-xs px-1.5 py-0.5 rounded bg-red-600 text-white font-bold animate-pulse">HARI INI</span>;
+  if (days === 1) return <span className="text-xs px-1.5 py-0.5 rounded bg-red-500/80 text-white font-bold">🚨 BESOK</span>;
+  if (days <= 3) return <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/80 text-white font-semibold">🔴 H-{days}</span>;
+  if (days <= 7) return <span className="text-xs px-1.5 py-0.5 rounded bg-amber-500/70 text-white">⚠️ H-{days}</span>;
   return null;
 }
 
@@ -120,7 +120,7 @@ export default function SubscriptionsPage() {
   const SubRow = ({ s }: { s: any }) => {
     const isNear = s.status === 'Aktif' && s.tanggal_renewal && s.tanggal_renewal <= in7Str && s.tanggal_renewal >= todayStr;
     return (
-      <div className={`flex items-center gap-3 p-3 rounded-xl border ${
+      <div className={`flex items-center gap-3 p-3 rounded-lg border ${
         s.status === 'Berhenti' ? 'border-slate-700/30 bg-slate-800/20 opacity-50'
         : isNear ? 'border-amber-500/40 bg-amber-500/5'
         : 'border-slate-700/50 bg-slate-800/40'
@@ -128,7 +128,7 @@ export default function SubscriptionsPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className={`text-sm font-medium ${s.status === 'Berhenti' ? 'text-slate-500 line-through' : 'text-white'}`}>{s.nama}</p>
-            {s.status === 'Berhenti' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">Berhenti</span>}
+            {s.status === 'Berhenti' && <span className="text-xs px-1.5 py-0.5 rounded bg-slate-700 text-slate-400">Berhenti</span>}
             {s.tanggal_renewal && s.status === 'Aktif' && <RenewalBadge dateStr={s.tanggal_renewal} />}
           </div>
           <div className="flex gap-3 mt-0.5">
@@ -153,7 +153,7 @@ export default function SubscriptionsPage() {
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">💳 Subscription Tracker</h1>
+          <h1 className="text-xl font-bold text-white">Subscription Tracker</h1>
           <p className="text-slate-400 text-sm">{activeSubs.length} aktif · {formatRupiah(totalBulan)}/bln · {formatRupiah(totalTahun)}/thn</p>
         </div>
         <div className="flex gap-2">
@@ -166,7 +166,7 @@ export default function SubscriptionsPage() {
 
       {/* Urgent renewal alert */}
       {urgentSubs.length > 0 && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
           <p className="text-amber-400 text-sm font-medium">⚠️ {urgentSubs.length} subscription renewal dalam 7 hari</p>
           {urgentSubs.map((s: any) => {
             const days = getDaysUntilRenewal(s.tanggal_renewal);
@@ -213,7 +213,7 @@ export default function SubscriptionsPage() {
 
       {/* Summary footer */}
       {activeSubs.length > 0 && (
-        <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/50">
+        <div className="p-3 rounded-lg bg-slate-800/60 border border-slate-700/50">
           <div className="flex justify-between text-sm mb-1">
             <span className="text-slate-400">Total aktif/bulan</span>
             <span className="font-semibold text-white">{formatRupiah(totalBulan)}</span>

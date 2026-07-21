@@ -5,7 +5,6 @@ import { Dialog, Button, Textarea } from '@/components/ui';
 
 const EOD_STATUSES = ['Selesai', 'Sebagian — lanjut besok', 'Tidak dikerjakan'];
 
-interface EODModalProps { sprint: any; onClose: () => void; }
 interface EODModalProps { sprint: any; onClose: () => void; liveTasks?: any[]; }
 export function EODModal({ sprint, onClose, liveTasks }: EODModalProps) {
   const qc = useQueryClient();
@@ -45,9 +44,9 @@ export function EODModal({ sprint, onClose, liveTasks }: EODModalProps) {
   };
 
   const statusColor: Record<string, string> = {
-    'Selesai': 'border-green-500 bg-green-500/20 text-green-300',
-    'Sebagian — lanjut besok': 'border-yellow-500 bg-yellow-500/20 text-yellow-300',
-    'Tidak dikerjakan': 'border-red-500 bg-red-500/20 text-red-300',
+    'Selesai': 'border-emerald-500 bg-emerald-500/15 text-emerald-300',
+    'Sebagian — lanjut besok': 'border-yellow-500 bg-yellow-500/15 text-yellow-300',
+    'Tidak dikerjakan': 'border-red-500 bg-red-500/15 text-red-300',
   };
 
   const statusShort: Record<string, string> = {
@@ -57,7 +56,7 @@ export function EODModal({ sprint, onClose, liveTasks }: EODModalProps) {
   };
 
   return (
-    <Dialog open title="🌙 Tutup Hari Ini" onClose={onClose} className="max-w-md">
+    <Dialog open title="Tutup Hari Ini" onClose={onClose} className="max-w-md">
       <div className="space-y-4">
         <p className="text-slate-400 text-xs sm:text-sm">Bagaimana task-task sprint hari ini?</p>
         {tasks.map((t: any) => (
@@ -66,8 +65,7 @@ export function EODModal({ sprint, onClose, liveTasks }: EODModalProps) {
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
               {EOD_STATUSES.map(s => (
                 <button key={s} onClick={() => setStatuses(prev => ({ ...prev, [t.task_id]: s }))}
-                  className={`px-2 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-xs border transition-all active:scale-95 ${statuses[t.task_id] === s ? statusColor[s] : 'border-slate-700 text-slate-400 hover:border-slate-600'}`}>
-                  {s === 'Selesai' ? '✅' : s === 'Sebagian — lanjut besok' ? '🔄' : '❌'}{' '}
+                  className={`px-2 sm:px-3 py-1.5 rounded-lg text-xs border transition-all active:scale-95 ${statuses[t.task_id] === s ? statusColor[s] : 'border-slate-700 text-slate-400 hover:border-slate-600'}`}>
                   <span className="sm:hidden">{statusShort[s]}</span>
                   <span className="hidden sm:inline">{s}</span>
                 </button>
@@ -85,7 +83,7 @@ export function EODModal({ sprint, onClose, liveTasks }: EODModalProps) {
           </Button>
           <Button variant="outline" onClick={onClose}>Batal</Button>
         </div>
-        {!allFilled && <p className="text-[10px] sm:text-xs text-amber-400 text-center">Semua task harus diberi status dulu</p>}
+        {!allFilled && <p className="text-xs text-amber-400 text-center">Semua task harus diberi status dulu</p>}
       </div>
     </Dialog>
   );

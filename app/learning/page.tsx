@@ -327,7 +327,7 @@ export default function LearningPage() {
     <div className="p-4 md:p-6 max-w-4xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">📚 Log Belajar</h1>
+          <h1 className="text-lg font-semibold text-white">Log Belajar</h1>
           <p className="text-slate-400 text-sm mt-2 max-w-lg">
             Lacak dan kelola semua progres belajar Anda. Lihat statistik, filter berdasarkan kategori, dan catat insight berharga. {logs.length > 0 && <span className="text-slate-500">— {logs.length} entri{hasActiveFilters ? ' (filtered)' : ' total'}</span>}
           </p>
@@ -393,10 +393,10 @@ export default function LearningPage() {
       </div>
 
       {/* Logs list */}
-      {logs.length === 0 ? <EmptyState icon="📚" title={hasActiveFilters ? 'Tidak ada hasil' : 'Belum ada log belajar'} desc="Coba ubah filter atau tambah log baru" /> : (
+      {logs.length === 0 ? <EmptyState  title={hasActiveFilters ? 'Tidak ada hasil' : 'Belum ada log belajar'} desc="Coba ubah filter atau tambah log baru" /> : (
         <div className="space-y-4">
           {logs.map((log: any) => (
-            <div key={log.id} className={`group relative p-5 pl-6 rounded-2xl border border-slate-700/50 bg-slate-800/40 hover:bg-slate-800/60 transition-all overflow-hidden shadow-sm hover:shadow-md ${log.finished ? 'opacity-60' : ''}`}>
+            <div key={log.id} className={`group relative p-5 pl-6 rounded-lg border border-slate-700/50 bg-slate-800/40 hover:bg-slate-800/60 transition-all overflow-hidden shadow-sm hover:shadow-md ${log.finished ? 'opacity-60' : ''}`}>
               <div className={`absolute left-0 top-0 bottom-0 w-1 ${typeBorderColors[log.type] || 'bg-slate-500'} opacity-80`} />
               
               <div className="flex flex-col sm:flex-row sm:items-start gap-4">
@@ -405,7 +405,7 @@ export default function LearningPage() {
                     <div className="w-full">
                       <div className="flex items-center gap-2 flex-wrap mb-2.5">
                         <h3 className={`text-lg font-semibold tracking-tight ${log.finished ? 'text-slate-400 line-through decoration-slate-600' : 'text-white'}`}>{log.title}</h3>
-                        {log.finished && <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500/20 text-green-400 text-[10px]" title="Selesai">✓</span>}
+                        {log.finished && <span className="flex items-center justify-center w-5 h-5 rounded-full bg-green-500/20 text-green-400 text-xs" title="Selesai">✓</span>}
                       </div>
                       
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
@@ -456,7 +456,7 @@ export default function LearningPage() {
       )}
 
       {/* Create Dialog */}
-      <Dialog open={showForm} onClose={() => setShowForm(false)} title="📚 Log Belajar Baru">
+      <Dialog open={showForm} onClose={() => setShowForm(false)} title="Log Belajar Baru">
         <div className="space-y-3">
           <Input placeholder="Judul *" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} />
           <div className="grid grid-cols-2 gap-2">

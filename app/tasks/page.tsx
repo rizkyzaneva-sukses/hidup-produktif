@@ -39,14 +39,14 @@ function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Ta
       <select
         value={form.project_id}
         onChange={e => setForm(p => ({ ...p, project_id: e.target.value }))}
-        className="w-full h-10 sm:h-9 px-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
+        className="w-full h-10 sm:h-9 px-3 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
       >
         <option value="">Tanpa Project</option>
         {projects.map((p: any) => <option key={p.id} value={p.id}>📁 {p.name}</option>)}
       </select>
       <Textarea placeholder="Notes (opsional)" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
       <div className="flex gap-2">
-        <Button onClick={submit} className="flex-1">Simpan <span className="ml-1 text-[10px] opacity-50">Ctrl+↵</span></Button>
+        <Button onClick={submit} className="flex-1">Simpan <span className="ml-1 text-xs opacity-50">Ctrl+↵</span></Button>
         <Button variant="outline" onClick={onCancel}>Batal</Button>
       </div>
     </div>
@@ -126,13 +126,13 @@ function BatchImport({ allRoles, onComplete }: { allRoles: string[]; onComplete:
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs text-slate-400 font-medium">📋 Batch Import</p>
           {result && (
-            <p className="text-xs text-green-400">✅ {result.success} ditambah{result.errors > 0 ? ` · ❌ ${result.errors} gagal` : ''}</p>
+            <p className="text-xs text-green-400">{result.success} ditambah{result.errors > 0 ? ` · ${result.errors} gagal` : ''}</p>
           )}
         </div>
         <textarea
           value={text} onChange={e => { setText(e.target.value); setResult(null); }} rows={4}
           placeholder={"Satu task per baris, contoh:\n@ceo #tinggi $deepwork Siapkan proposal Q3\n@ayah Olahraga pagi bersama anak"}
-          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none mb-2"
+          className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none mb-2"
         />
         <Button size="sm" onClick={handleImport} disabled={!text.trim() || importing}>
           {importing ? '⏳ Import...' : `📥 Import ${text.split('\n').filter(l => l.trim()).length} task`}
@@ -343,38 +343,43 @@ export default function TasksPage() {
   const hasActiveFilters = filterRole || filterPriority || filterWorkType || filterProject || filterRecurring || searchQuery;
 
   const TaskRow = ({ task }: { task: Task }) => (
-    <div className={`flex items-start gap-3 p-3 sm:p-4 rounded-xl border transition-all ${
-      task.completed 
-        ? 'border-slate-700/30 bg-slate-800/20' 
-        : 'border-slate-700/50 bg-slate-800/40 hover:border-slate-600/50'
+    <div className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+      task.completed
+        ? 'border-slate-800/50 bg-slate-900/30'
+        : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
     } group`}>
-      <input type="checkbox" checked={task.completed} onChange={e => updateTask.mutate({ id: task.id, completed: e.target.checked })} className="w-4 h-4 sm:w-5 sm:h-5 accent-blue-500 cursor-pointer mt-0.5 flex-shrink-0" />
+      <input type="checkbox" checked={task.completed} onChange={e => updateTask.mutate({ id: task.id, completed: e.target.checked })} className="w-4 h-4 accent-blue-500 cursor-pointer mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className={`text-xs sm:text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-white'}`}>{task.title}</p>
-        <div className="flex flex-wrap gap-1 sm:gap-1.5 mt-1.5">
+        <p className={`text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-white'}`}>{task.title}</p>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
           <PriorityDot priority={task.priority} />
           <RoleBadge role={task.role} />
           <WorkTypeBadge type={task.work_type} />
           {task.project_name && (
-            <span className="text-[10px] sm:text-xs text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-md">📁 {task.project_name}</span>
+            <span className="text-xs text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-md">{task.project_name}</span>
           )}
           {task.due_date && (
-            <span className={`text-[10px] sm:text-xs ${isOverdue(task.due_date) ? 'text-red-400' : isTodayDate(task.due_date) ? 'text-amber-400' : 'text-slate-500'}`}>
-              📅 {formatDateShort(task.due_date)}
+            <span className={`text-xs ${isOverdue(task.due_date) ? 'text-red-400' : isTodayDate(task.due_date) ? 'text-amber-400' : 'text-slate-500'}`}>
+              {formatDateShort(task.due_date)}
             </span>
           )}
         </div>
-        {task.notes && <p className="text-[10px] sm:text-xs text-slate-500 mt-1 truncate">{task.notes}</p>}
+        {task.notes && <p className="text-xs text-slate-500 mt-1 truncate">{task.notes}</p>}
         {task.recurring && task.recurring !== 'Sekali' && (
-          <p className="text-[10px] text-blue-400 mt-1">🔁 {task.recurring}</p>
+          <p className="text-xs text-blue-400 mt-1">{task.recurring}</p>
         )}
       </div>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 sm:transition-opacity flex-shrink-0">
-        <Button size="icon" variant="ghost" onClick={() => setEditTask(task)} className="h-7 w-7 sm:h-8 sm:w-8">✏️</Button>
-        <Button size="icon" variant="ghost" onClick={() => deleteTask.mutate(task.id)} className="h-7 w-7 sm:h-8 sm:w-8 text-red-400">🗑</Button>
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        <Button size="icon" variant="ghost" onClick={() => setEditTask(task)} className="h-7 w-7">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8.5 2.5l3 3M1 10l7-7 3 3-7 7H1v-3z"/></svg>
+        </Button>
+        <Button size="icon" variant="ghost" onClick={() => deleteTask.mutate(task.id)} className="h-7 w-7 text-red-400">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M2 4h10M5 4V2h4v2M3 4l1 8h6l1-8"/></svg>
+        </Button>
       </div>
-      {/* Mobile action - long press or swipe alternative */}
-      <button onClick={() => setEditTask(task)} className="sm:hidden flex-shrink-0 text-slate-500 p-1">⋮</button>
+      <button onClick={() => setEditTask(task)} className="sm:hidden shrink-0 text-slate-500 p-1">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>
+      </button>
     </div>
   );
 
@@ -393,25 +398,25 @@ export default function TasksPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-lg sm:text-xl font-bold text-white">✅ Tasks</h1>
-          <p className="text-slate-400 text-xs sm:text-sm">{active.length} aktif · {done.length} selesai</p>
+          <h1 className="text-lg font-semibold text-white">Tasks</h1>
+          <p className="text-slate-500 text-sm">{active.length} aktif · {done.length} selesai</p>
         </div>
-        <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
-          <button onClick={() => setView('list')} className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm transition-colors ${view === 'list' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'}`}>List</button>
-          <button onClick={() => setView('kanban')} className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs sm:text-sm transition-colors hidden sm:inline-flex ${view === 'kanban' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-400'}`}>Kanban</button>
+        <div className="flex gap-1.5 shrink-0">
+          <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${view === 'list' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>List</button>
+          <button onClick={() => setView('kanban')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors hidden sm:inline-flex ${view === 'kanban' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>Kanban</button>
           <Button onClick={() => setShowForm(true)} size="sm">+ Task</Button>
         </div>
       </div>
 
       {/* Search box */}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">🔍</span>
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <input
           type="text"
           placeholder="Cari task..."
           value={searchQuery}
           onChange={e => { setSearchQuery(e.target.value); resetPages(); }}
-          className="w-full h-9 sm:h-10 pl-9 pr-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors"
+          className="w-full h-9 pl-9 pr-3 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-colors"
         />
         {searchQuery && (
           <button onClick={() => { setSearchQuery(''); resetPages(); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs">✕</button>
@@ -425,7 +430,7 @@ export default function TasksPage() {
           <Button onClick={quickAdd} size="sm" className="flex-shrink-0">+</Button>
         </div>
         {quickDropdown && quickOpts.length > 0 && (
-          <div className="absolute z-20 top-full left-0 mt-1 w-56 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-xl max-h-48 overflow-y-auto">
+          <div className="absolute z-20 top-full left-0 mt-1 w-56 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden shadow-xl max-h-48 overflow-y-auto">
             {quickOpts.map((opt, idx) => (
               <button
                 key={opt}
@@ -439,7 +444,7 @@ export default function TasksPage() {
             ))}
           </div>
         )}
-        <p className="text-[10px] text-slate-600 mt-1">@role · #tinggi/sedang/rendah · $deepwork/admin/shallow · %project</p>
+        <p className="text-xs text-slate-600 mt-1">@role · #tinggi/sedang/rendah · $deepwork/admin/shallow · %project</p>
       </div>
 
       {/* Filters - collapsible on mobile */}
@@ -448,34 +453,34 @@ export default function TasksPage() {
           onClick={() => setShowFilters(!showFilters)}
           className="sm:hidden flex items-center gap-2 text-xs text-slate-400 mb-2"
         >
-          <span>🔍 Filter</span>
+          <span>Filter</span>
           {hasActiveFilters && <span className="w-2 h-2 rounded-full bg-blue-500" />}
           <span>{showFilters ? '▲' : '▼'}</span>
         </button>
         <div className={`flex flex-wrap gap-2 ${showFilters ? 'flex' : 'hidden sm:flex'}`}>
-          <select value={filterRole} onChange={e => { setFilterRole(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterRole} onChange={e => { setFilterRole(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Peran</option>
             {allRoles.map(r => <option key={r} value={r}>{r}</option>)}
           </select>
-          <select value={filterPriority} onChange={e => { setFilterPriority(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterPriority} onChange={e => { setFilterPriority(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Prioritas</option>
             {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <select value={filterWorkType} onChange={e => { setFilterWorkType(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterWorkType} onChange={e => { setFilterWorkType(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Tipe</option>
             {WORK_TYPES.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
-          <select value={filterProject} onChange={e => { setFilterProject(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterProject} onChange={e => { setFilterProject(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Project</option>
             {projects.map((p: any) => <option key={p.id} value={p.id}>📁 {p.name}</option>)}
           </select>
-          <select value={filterRecurring} onChange={e => { setFilterRecurring(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+          <select value={filterRecurring} onChange={e => { setFilterRecurring(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
             <option value="">Semua Perulangan</option>
             <option value="Ya">🔁 Berkala</option>
             <option value="Tidak">Sekali</option>
           </select>
           {hasActiveFilters && (
-            <button onClick={() => { setFilterRole(''); setFilterPriority(''); setFilterWorkType(''); setFilterProject(''); setFilterRecurring(''); setSearchQuery(''); resetPages(); }} className="h-8 sm:h-9 px-3 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition-colors">
+            <button onClick={() => { setFilterRole(''); setFilterPriority(''); setFilterWorkType(''); setFilterProject(''); setFilterRecurring(''); setSearchQuery(''); resetPages(); }} className="h-8 sm:h-9 px-3 rounded-lg text-xs text-red-400 hover:bg-red-500/10 transition-colors">
               ✕ Reset
             </button>
           )}
@@ -488,7 +493,7 @@ export default function TasksPage() {
       {/* List view */}
       {view === 'list' && (
         <div className="space-y-4">
-          {active.length === 0 && done.length === 0 && <EmptyState icon="✅" title="Belum ada task" desc="Tambah task baru di atas" />}
+          {active.length === 0 && done.length === 0 && <EmptyState  title="Belum ada task" desc="Tambah task baru di atas" />}
           
           {/* Active tasks with pagination */}
           {active.length > 0 && (
@@ -528,7 +533,7 @@ export default function TasksPage() {
               {!showAllDone && done.length > DONE_PREVIEW_COUNT && (
                 <button
                   onClick={() => setShowAllDone(true)}
-                  className="w-full mt-2 py-2 rounded-xl text-xs text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-colors"
+                  className="w-full mt-2 py-2 rounded-lg text-xs text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-colors"
                 >
                   Tampilkan semua ({done.length - DONE_PREVIEW_COUNT} lainnya) ▼
                 </button>
@@ -555,7 +560,7 @@ export default function TasksPage() {
               {showAllDone && (
                 <button
                   onClick={() => { setShowAllDone(false); setDonePage(1); }}
-                  className="w-full mt-2 py-1.5 rounded-xl text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                  className="w-full mt-2 py-1.5 rounded-lg text-xs text-slate-500 hover:text-slate-300 transition-colors"
                 >
                   Sembunyikan ▲
                 </button>
@@ -569,7 +574,7 @@ export default function TasksPage() {
       {view === 'kanban' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {kanbanCols.map(col => (
-            <div key={col.label} className="bg-slate-800/30 rounded-2xl p-3 sm:p-4 border border-slate-700/30">
+            <div key={col.label} className="bg-slate-800/30 rounded-lg p-3 sm:p-4 border border-slate-700/30">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs sm:text-sm font-medium text-slate-300">{col.label}</h3>
                 <Badge variant="slate">{col.tasks.length}</Badge>

@@ -3,9 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { DURATION_OPTIONS, DURATION_HOURS, WORK_TYPES, ROLES } from '@/lib/constants';
+import { DURATION_OPTIONS, DURATION_HOURS } from '@/lib/constants';
 import { todayStr, yesterdayStr } from '@/lib/utils';
-import { Card, CardContent, Button, Select, Badge, EmptyState } from '@/components/ui';
+import { Card, CardContent, Button, Badge, EmptyState } from '@/components/ui';
 import { WorkTypeBadge, RoleBadge } from '@/components/shared/badges';
 import { EODModal } from '@/components/sprint/EODModal';
 
@@ -16,7 +16,6 @@ export default function SprintPage() {
   const yesterday = yesterdayStr();
   const qc = useQueryClient();
 
-  const [step, setStep] = useState(1);
   const [energy, setEnergy] = useState(3);
   const [intention, setIntention] = useState('');
   const [selectedTasks, setSelectedTasks] = useState<Array<{ task_id: string; task_title: string; duration: string }>>([
@@ -31,7 +30,6 @@ export default function SprintPage() {
   const { data: yesterdaySprint } = useQuery({ queryKey: ['sprint', yesterday], queryFn: () => fetcher(`/api/sprints?date=${yesterday}`) });
   const { data: allTasks = [] } = useQuery({ queryKey: ['tasks-sprint'], queryFn: () => fetcher('/api/tasks?completed=false') });
 
-  // Carryover logic
   const carryoverIds = (yesterdaySprint?.eod_task_statuses || [])
     .filter((s: any) => s.status === 'Sebagian — lanjut besok' || s.status === 'Tidak dikerjakan')
     .map((s: any) => s.task_id);
@@ -46,7 +44,6 @@ export default function SprintPage() {
     return (pri[a.priority] || 1) - (pri[b.priority] || 1);
   });
 
-  // Auto-fill suggestions on first load
   useEffect(() => {
     if (!todaySprint && sortedTasks.length > 0 && selectedTasks.every(t => !t.task_id)) {
       const suggestions = sortedTasks.slice(0, 3);
@@ -80,20 +77,20 @@ export default function SprintPage() {
   const totalHours = selectedTasks.reduce((sum, t) => sum + (DURATION_HOURS[t.duration] || 0), 0);
   const sprintExists = !!todaySprint?.tasks?.length && !editing;
 
-  // Summary view
+  // ── Summary view ────────────────────────────────────────────────────────────
   if (sprintExists) {
     const sprintTasks: any[] = todaySprint.tasks || [];
     return (
-      <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto space-y-4 sm:space-y-5">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-lg sm:text-xl font-bold text-white">🎯 Sprint Hari Ini</h1>
-            <p className="text-slate-400 text-xs sm:text-sm">{format(new Date(), 'EEEE, d MMMM', { locale: id })}</p>
+            <h1 className="text-lg font-semibold text-white">Sprint Hari Ini</h1>
+            <p className="text-slate-500 text-sm">{format(new Date(), 'EEEE, d MMMM', { locale: id })}</p>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-2 shrink-0">
             {!todaySprint.eod_submitted_at && (
               <Button onClick={() => setShowEod(true)} variant={new Date().getHours() >= 15 ? 'default' : 'secondary'} size="sm">
-                🌙 Tutup
+                Tutup Hari
               </Button>
             )}
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>Edit</Button>
@@ -102,29 +99,29 @@ export default function SprintPage() {
 
         <Card>
           <CardContent className="p-4 sm:p-5">
-            <div className="flex gap-2 sm:gap-3 flex-wrap mb-3">
-              {todaySprint.energy_level && <Badge>⚡ Energi {todaySprint.energy_level}/5</Badge>}
-              {todaySprint.eod_submitted_at && <Badge variant="success">✅ EOD Selesai</Badge>}
+            <div className="flex gap-2 flex-wrap mb-3">
+              {todaySprint.energy_level && <Badge>Energi {todaySprint.energy_level}/5</Badge>}
+              {todaySprint.eod_submitted_at && <Badge variant="success">EOD Selesai</Badge>}
             </div>
-            {todaySprint.intention && <p className="text-slate-300 text-xs sm:text-sm italic mb-4">"{todaySprint.intention}"</p>}
-            <div className="space-y-2 sm:space-y-3">
+            {todaySprint.intention && <p className="text-slate-400 text-sm italic mb-4">"{todaySprint.intention}"</p>}
+            <div className="space-y-1">
               {sprintTasks.map((t: any) => {
                 const taskData = allTasks.find((tk: any) => tk.id === t.task_id);
                 const isCarry = carryoverIds.includes(t.task_id);
                 return (
-                  <div key={t.task_id} className="flex items-center gap-3 py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl border-b border-slate-700/50 last:border-0 hover:bg-slate-700/20 transition-colors">
+                  <div key={t.task_id} className="flex items-center gap-3 py-2.5 px-2 rounded-lg border-b border-slate-800/60 last:border-0 hover:bg-slate-800/30 transition-colors">
                     <input type="checkbox" checked={!!taskData?.completed}
                       onChange={e => toggleTaskDone.mutate({ id: t.task_id, completed: e.target.checked })}
-                      className="w-4 h-4 sm:w-5 sm:h-5 accent-blue-500 cursor-pointer flex-shrink-0" />
+                      className="w-4 h-4 accent-blue-500 cursor-pointer shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className={`text-xs sm:text-sm ${taskData?.completed ? 'line-through text-slate-500' : 'text-white'}`}>{t.task_title}</p>
-                      <div className="flex gap-1.5 mt-0.5 flex-wrap">
-                        {isCarry && <span className="text-[10px] sm:text-xs text-amber-400">🔄 carryover</span>}
+                      <p className={`text-sm ${taskData?.completed ? 'line-through text-slate-500' : 'text-white'}`}>{t.task_title}</p>
+                      <div className="flex gap-1.5 mt-1 flex-wrap">
+                        {isCarry && <span className="text-xs text-amber-400">carryover</span>}
                         {taskData && <WorkTypeBadge type={taskData.work_type} />}
                         {taskData && <RoleBadge role={taskData.role} />}
                       </div>
                     </div>
-                    <span className="text-[10px] sm:text-xs text-slate-500 flex-shrink-0">{t.duration}</span>
+                    <span className="text-xs text-slate-500 shrink-0">{t.duration}</span>
                   </div>
                 );
               })}
@@ -132,17 +129,16 @@ export default function SprintPage() {
           </CardContent>
         </Card>
 
-        {/* Yesterday recap */}
         {yesterdaySprint?.eod_task_statuses?.length > 0 && (
           <Card>
             <CardContent className="p-4 sm:p-5">
-              <h3 className="text-xs sm:text-sm font-medium text-slate-400 mb-3">📋 Recap Kemarin</h3>
+              <h3 className="text-sm font-medium text-slate-400 mb-3">Recap Kemarin</h3>
               <div className="space-y-2">
                 {yesterdaySprint.eod_task_statuses.map((s: any) => (
-                  <div key={s.task_id} className="flex items-center gap-2 text-xs sm:text-sm">
-                    <span>{s.status === 'Selesai' ? '✅' : s.status.includes('Sebagian') ? '🔄' : '❌'}</span>
+                  <div key={s.task_id} className="flex items-center gap-2 text-sm">
+                    <span className="shrink-0">{s.status === 'Selesai' ? '✓' : s.status.includes('Sebagian') ? '~' : '✕'}</span>
                     <span className="text-slate-300 flex-1 min-w-0 truncate">{s.task_title}</span>
-                    <span className="text-[10px] sm:text-xs text-slate-500 flex-shrink-0">{s.status}</span>
+                    <span className="text-xs text-slate-500 shrink-0">{s.status}</span>
                   </div>
                 ))}
               </div>
@@ -157,59 +153,65 @@ export default function SprintPage() {
     );
   }
 
-  // Form view - 2 panel (stacked on mobile)
+  // ── Form view ───────────────────────────────────────────────────────────────
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
-      <div className="mb-4 sm:mb-5">
-        <h1 className="text-lg sm:text-xl font-bold text-white">🎯 Daily Sprint</h1>
-        <p className="text-slate-400 text-xs sm:text-sm">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: id })}</p>
+      <div className="mb-5">
+        <h1 className="text-lg font-semibold text-white">Daily Sprint</h1>
+        <p className="text-slate-500 text-sm">{format(new Date(), 'EEEE, d MMMM yyyy', { locale: id })}</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4 sm:gap-5">
-        {/* Left panel - Recap kemarin */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* Recap kemarin */}
         <Card>
           <CardContent className="p-4 sm:p-5">
-            <h2 className="font-semibold text-white text-sm sm:text-base mb-3">📋 Recap Kemarin</h2>
+            <h2 className="font-semibold text-white text-sm mb-3">Recap Kemarin</h2>
             {yesterdaySprint?.eod_task_statuses?.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {yesterdaySprint.eod_task_statuses.map((s: any) => (
-                  <div key={s.task_id} className="flex items-start gap-2 text-xs sm:text-sm">
-                    <span className="mt-0.5">{s.status === 'Selesai' ? '✅' : s.status.includes('Sebagian') ? '🔄' : '❌'}</span>
+                  <div key={s.task_id} className="flex items-start gap-2.5 text-sm">
+                    <span className="mt-0.5 text-slate-500 shrink-0 w-4 text-center">
+                      {s.status === 'Selesai' ? '✓' : s.status.includes('Sebagian') ? '~' : '✕'}
+                    </span>
                     <div className="min-w-0">
-                      <p className="text-slate-300 truncate">{s.task_title}</p>
-                      <p className="text-[10px] sm:text-xs text-slate-500">{s.status}</p>
+                      <p className="text-slate-300">{s.task_title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{s.status}</p>
                     </div>
                   </div>
                 ))}
                 {yesterdaySprint.eod_notes && (
-                  <div className="mt-3 pt-3 border-t border-slate-700">
-                    <p className="text-[10px] sm:text-xs text-slate-500">Catatan: {yesterdaySprint.eod_notes}</p>
+                  <div className="mt-3 pt-3 border-t border-slate-800">
+                    <p className="text-xs text-slate-500">Catatan: {yesterdaySprint.eod_notes}</p>
                   </div>
                 )}
               </div>
             ) : yesterdaySprint && !yesterdaySprint.eod_submitted_at ? (
               <div>
-                <p className="text-slate-400 text-xs sm:text-sm mb-3">EOD kemarin belum diisi.</p>
+                <p className="text-slate-500 text-sm mb-3">EOD kemarin belum diisi.</p>
                 <Button size="sm" onClick={() => setShowEod(true)} variant="outline">Isi EOD Kemarin</Button>
               </div>
             ) : (
-              <p className="text-slate-500 text-xs sm:text-sm">Tidak ada sprint kemarin.</p>
+              <p className="text-slate-600 text-sm">Tidak ada sprint kemarin.</p>
             )}
           </CardContent>
         </Card>
 
-        {/* Right panel - Today planning */}
+        {/* Rencana hari ini */}
         <Card>
           <CardContent className="p-4 sm:p-5">
-            <h2 className="font-semibold text-white text-sm sm:text-base mb-4">🌅 Rencana Hari Ini</h2>
+            <h2 className="font-semibold text-white text-sm mb-4">Rencana Hari Ini</h2>
 
-            {/* Energy */}
-            <div className="mb-4">
-              <label className="text-xs sm:text-sm text-slate-400 block mb-2">Level Energi</label>
+            {/* Energy level */}
+            <div className="mb-5">
+              <label className="text-sm text-slate-400 block mb-2">Level Energi</label>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map(n => (
                   <button key={n} onClick={() => setEnergy(n)}
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl font-medium text-sm transition-all ${energy === n ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30 scale-105' : 'bg-slate-700 text-slate-400 hover:bg-slate-600'}`}>
+                    className={`w-10 h-10 rounded-lg font-medium text-sm transition-all ${
+                      energy === n
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-500/30'
+                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                    }`}>
                     {n}
                   </button>
                 ))}
@@ -217,23 +219,20 @@ export default function SprintPage() {
             </div>
 
             {/* Intention */}
-            <div className="mb-4">
-              <label className="text-xs sm:text-sm text-slate-400 block mb-2">Niat Hari Ini</label>
-              <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5">
-                <span className="text-slate-500 text-xs sm:text-sm flex-shrink-0 hidden sm:inline">Hari ini saya fokus pada</span>
-                <input value={intention} onChange={e => setIntention(e.target.value)}
-                  className="flex-1 bg-transparent text-white text-sm outline-none placeholder:text-slate-600 min-w-0"
-                  placeholder="Fokus hari ini..." />
-              </div>
+            <div className="mb-5">
+              <label className="text-sm text-slate-400 block mb-2">Niat Hari Ini</label>
+              <input value={intention} onChange={e => setIntention(e.target.value)}
+                className="w-full h-9 px-3 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm outline-none placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/40 focus:border-transparent transition-colors"
+                placeholder="Hari ini saya fokus pada..." />
             </div>
 
-            {/* 3 tasks */}
-            <div className="mb-4">
+            {/* Task selection */}
+            <div className="mb-5">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-xs sm:text-sm text-slate-400">3 Deep Work Tasks</label>
+                <label className="text-sm text-slate-400">3 Deep Work Tasks</label>
                 {totalHours > 0 && (
-                  <span className={`text-[10px] sm:text-xs ${totalHours > 3 ? 'text-amber-400' : 'text-slate-400'}`}>
-                    Total: {totalHours}j {totalHours > 3 && '⚠️'}
+                  <span className={`text-xs ${totalHours > 3 ? 'text-amber-400' : 'text-slate-500'}`}>
+                    Total: {totalHours}j {totalHours > 3 && '!'}
                   </span>
                 )}
               </div>
@@ -247,17 +246,17 @@ export default function SprintPage() {
                         next[i] = { task_id: e.target.value, task_title: task?.title || '', duration: sel.duration };
                         setSelectedTasks(next);
                       }}
-                      className="flex-1 h-9 sm:h-10 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 min-w-0 transition-colors">
-                      <option value="">-- pilih task --</option>
+                      className="flex-1 h-9 px-3 rounded-lg bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 min-w-0 transition-colors">
+                      <option value="">Pilih task...</option>
                       {sortedTasks.map((t: any) => (
                         <option key={t.id} value={t.id}>
-                          {carryoverIds.includes(t.id) ? '🔄 ' : ''}{t.title} [{t.work_type}]
+                          {carryoverIds.includes(t.id) ? '↩ ' : ''}{t.title} [{t.work_type}]
                         </option>
                       ))}
                     </select>
                     <select value={sel.duration}
                       onChange={e => { const next = [...selectedTasks]; next[i].duration = e.target.value; setSelectedTasks(next); }}
-                      className="w-20 sm:w-24 h-9 sm:h-10 px-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-[10px] sm:text-xs focus:outline-none transition-colors">
+                      className="w-24 h-9 px-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-colors">
                       {DURATION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
@@ -266,7 +265,7 @@ export default function SprintPage() {
             </div>
 
             <Button onClick={() => saveSprint.mutate()} className="w-full" disabled={saveSprint.isPending}>
-              {saveSprint.isPending ? 'Menyimpan...' : '🚀 Mulai Sprint'}
+              {saveSprint.isPending ? 'Menyimpan...' : 'Mulai Sprint'}
             </Button>
           </CardContent>
         </Card>

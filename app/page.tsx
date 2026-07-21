@@ -44,12 +44,10 @@ export default function HomePage() {
   const activeHabits = habits.filter((h: any) => h.active);
   const sprintTasks: any[] = sprint?.tasks || [];
 
-  // Stat bar
   const activeTasks = tasks.filter((t: any) => !t.completed).length;
   const habitsDone = habitLogs.length;
   const mentahIdeas = ideas.filter((i: any) => i.status === 'Mentah').length;
 
-  // Subscriptions near renewal (≤7 days)
   const nearRenewalSubs = (subs as any[])
     .filter((s: any) => s.status === 'Aktif' && s.tanggal_renewal)
     .map((s: any) => ({ ...s, daysLeft: getDaysUntilRenewal(s.tanggal_renewal) }))
@@ -57,7 +55,6 @@ export default function HomePage() {
     .sort((a: any, b: any) => a.daysLeft - b.daysLeft)
     .slice(0, 3);
 
-  // Reminders active today
   const dayOfWeek = now.getDay().toString();
   const dayOfMonth = today.split('-')[2];
   const todayReminders = (reminders as any[]).filter((r: any) => {
@@ -84,32 +81,31 @@ export default function HomePage() {
   });
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-4 sm:space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-slate-400 text-xs sm:text-sm">{format(now, 'EEEE, d MMMM yyyy', { locale: id })}</p>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mt-0.5 truncate">{greeting} 👋</h1>
+          <p className="text-slate-500 text-sm">{format(now, 'EEEE, d MMMM yyyy', { locale: id })}</p>
+          <h1 className="text-xl font-semibold text-white mt-0.5">{greeting}</h1>
         </div>
-        <Link href="/sprint" className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-xl transition-colors shadow-lg shadow-blue-600/20">
-          🎯 Sprint
+        <Link href="/sprint" className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+          Sprint
         </Link>
       </div>
 
-      {/* Stat bar */}
+      {/* Stats */}
       <div className="grid grid-cols-4 gap-2 sm:gap-3">
         {[
-          { label: 'Task Aktif', value: activeTasks, icon: '📋', href: '/tasks', color: 'text-blue-400' },
-          { label: 'Habit Hari Ini', value: `${habitsDone}/${activeHabits.length}`, icon: '✅', href: '/habits', color: 'text-green-400' },
-          { label: 'Ide Mentah', value: mentahIdeas, icon: '💡', href: '/ideas', color: 'text-amber-400' },
-          { label: 'Langganan', value: nearRenewalSubs.length > 0 ? `${nearRenewalSubs.length} ⚠️` : subs.filter((s: any) => s.status === 'Aktif').length, icon: '💳', href: '/subscriptions', color: nearRenewalSubs.length > 0 ? 'text-red-400' : 'text-slate-300' },
+          { label: 'Task Aktif', value: activeTasks, href: '/tasks', color: 'text-blue-400' },
+          { label: 'Habit', value: `${habitsDone}/${activeHabits.length}`, href: '/habits', color: 'text-emerald-400' },
+          { label: 'Ide Mentah', value: mentahIdeas, href: '/ideas', color: 'text-amber-400' },
+          { label: 'Langganan', value: nearRenewalSubs.length > 0 ? `${nearRenewalSubs.length} !` : subs.filter((s: any) => s.status === 'Aktif').length, href: '/subscriptions', color: nearRenewalSubs.length > 0 ? 'text-red-400' : 'text-slate-300' },
         ].map(stat => (
           <Link key={stat.label} href={stat.href}>
-            <Card className="hover:border-slate-600 transition-all cursor-pointer active:scale-[0.97]">
-              <CardContent className="p-2.5 sm:p-4 text-center">
-                <div className="text-lg sm:text-2xl mb-0.5">{stat.icon}</div>
-                <div className={`text-base sm:text-xl font-bold ${stat.color}`}>{stat.value}</div>
-                <div className="text-[9px] sm:text-xs text-slate-500 mt-0.5 leading-tight">{stat.label}</div>
+            <Card className="hover:border-slate-700 transition-colors">
+              <CardContent className="p-3 sm:p-4 text-center">
+                <div className={`text-lg sm:text-xl font-bold ${stat.color}`}>{stat.value}</div>
+                <div className="text-xs text-slate-500 mt-0.5">{stat.label}</div>
               </CardContent>
             </Card>
           </Link>
@@ -117,24 +113,22 @@ export default function HomePage() {
       </div>
 
       {/* Quote */}
-      <Card>
-        <CardContent className="py-3 sm:py-4">
-          <p className="text-slate-300 text-xs sm:text-sm italic text-center leading-relaxed">✨ {quote}</p>
-        </CardContent>
-      </Card>
+      <div className="py-3 text-center">
+        <p className="text-slate-400 text-sm italic leading-relaxed">{quote}</p>
+      </div>
 
       {/* Sholat times */}
       <Card>
         <CardContent className="py-3 sm:py-4">
-          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-3">🕌 Sholat Cimahi</p>
-          <div className="grid grid-cols-5 gap-1 sm:gap-3">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-3">Sholat Cimahi</p>
+          <div className="grid grid-cols-5 gap-1.5 sm:gap-3">
             {Object.entries(SHOLAT_TIMES).map(([name, time]) => {
               const [h, m] = time.split(':').map(Number);
               const isPast = now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
               return (
                 <div key={name} className="text-center p-1.5 sm:p-2 rounded-lg bg-slate-800/50">
-                  <p className={`text-[10px] sm:text-xs font-medium ${isPast ? 'text-slate-500' : 'text-amber-400'}`}>{name}</p>
-                  <p className={`text-xs sm:text-sm font-mono mt-0.5 ${isPast ? 'text-slate-600' : 'text-white font-semibold'}`}>{time}</p>
+                  <p className={`text-xs font-medium ${isPast ? 'text-slate-600' : 'text-amber-400'}`}>{name}</p>
+                  <p className={`text-sm font-mono mt-0.5 ${isPast ? 'text-slate-600' : 'text-white font-semibold'}`}>{time}</p>
                 </div>
               );
             })}
@@ -148,28 +142,31 @@ export default function HomePage() {
           <CardContent className="p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3 gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="text-lg">🎯</span>
-                <h2 className="font-semibold text-white text-sm sm:text-base truncate">Sprint Hari Ini</h2>
-                {sprint.energy_level && <Badge className="hidden sm:inline-flex">⚡ {sprint.energy_level}/5</Badge>}
+                <h2 className="font-semibold text-white text-sm">Sprint Hari Ini</h2>
+                {sprint.energy_level && <Badge>Energi {sprint.energy_level}/5</Badge>}
               </div>
               {!sprint.eod_submitted_at ? (
                 <button onClick={() => setShowEod(true)}
-                  className={`text-xs sm:text-sm px-3 py-1.5 rounded-lg font-medium flex-shrink-0 transition-colors ${isAfter15 ? 'bg-amber-500 hover:bg-amber-400 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-200'}`}>
+                  className={`text-sm px-3 py-1.5 rounded-lg font-medium shrink-0 transition-colors ${
+                    isAfter15
+                      ? 'bg-amber-500 hover:bg-amber-400 text-white'
+                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                  }`}>
                   Tutup Hari
                 </button>
-              ) : <Badge variant="success">✅ EOD</Badge>}
+              ) : <Badge variant="success">EOD Selesai</Badge>}
             </div>
-            {sprint.intention && <p className="text-slate-400 text-xs sm:text-sm mb-3 italic">"{sprint.intention}"</p>}
-            <div className="space-y-1.5 sm:space-y-2">
+            {sprint.intention && <p className="text-slate-400 text-sm mb-3 italic">"{sprint.intention}"</p>}
+            <div className="space-y-1">
               {sprintTasks.map((t: any) => {
                 const taskData = tasks.find((tk: any) => tk.id === t.task_id);
                 return (
-                  <div key={t.task_id} className="flex items-center gap-3 py-2 px-2 sm:px-3 rounded-lg hover:bg-slate-700/30 transition-colors">
+                  <div key={t.task_id} className="flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-slate-800/40 transition-colors">
                     <input type="checkbox" checked={!!taskData?.completed}
                       onChange={e => toggleTask.mutate({ id: t.task_id, completed: e.target.checked })}
-                      className="w-4 h-4 sm:w-5 sm:h-5 accent-blue-500 cursor-pointer flex-shrink-0" />
-                    <span className={`text-xs sm:text-sm flex-1 min-w-0 truncate ${taskData?.completed ? 'line-through text-slate-500' : 'text-white'}`}>{t.task_title}</span>
-                    {t.duration && <span className="text-[10px] sm:text-xs text-slate-500 flex-shrink-0">{t.duration}</span>}
+                      className="w-4 h-4 accent-blue-500 cursor-pointer shrink-0" />
+                    <span className={`text-sm flex-1 min-w-0 truncate ${taskData?.completed ? 'line-through text-slate-500' : 'text-white'}`}>{t.task_title}</span>
+                    {t.duration && <span className="text-xs text-slate-500 shrink-0">{t.duration}</span>}
                   </div>
                 );
               })}
@@ -177,36 +174,31 @@ export default function HomePage() {
           </CardContent>
         </Card>
       ) : (
-        <Card className="border-dashed border-blue-500/30">
-          <CardContent className="py-8 sm:py-10 text-center">
-            <div className="text-3xl mb-3">🎯</div>
-            <p className="text-slate-400 text-sm mb-4">Belum ada sprint hari ini</p>
-            <Link href="/sprint" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition-colors shadow-lg shadow-blue-600/20">
-              Mulai Daily Sprint →
+        <Card className="border-dashed border-slate-700">
+          <CardContent className="py-10 text-center">
+            <p className="text-slate-500 text-sm mb-4">Belum ada sprint hari ini</p>
+            <Link href="/sprint" className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors">
+              Mulai Daily Sprint
             </Link>
           </CardContent>
         </Card>
       )}
 
-      {/* Two-col: Reminders + Subscription alert */}
+      {/* Reminders + Subscriptions */}
       {(todayReminders.length > 0 || nearRenewalSubs.length > 0) && (
-        <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-          {/* Reminders hari ini */}
+        <div className="grid sm:grid-cols-2 gap-3">
           {todayReminders.length > 0 && (
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-white">🔔 Reminder Hari Ini</h3>
+                  <h3 className="text-sm font-semibold text-white">Reminder Hari Ini</h3>
                   <Link href="/reminders" className="text-xs text-blue-400 hover:underline">Lihat semua</Link>
                 </div>
                 <div className="space-y-2">
                   {todayReminders.map((r: any) => (
                     <div key={r.id} className="flex items-center gap-2">
-                      <span className="text-xs">
-                        {r.frequency === 'Harian' ? '🔁' : r.frequency === 'Mingguan' ? '📅' : r.frequency === 'Bulanan' ? '📆' : '📌'}
-                      </span>
                       <span className="text-sm text-slate-300 flex-1 truncate">{r.title}</span>
-                      <span className="text-[10px] text-slate-500">{r.role}</span>
+                      <span className="text-xs text-slate-500">{r.role}</span>
                     </div>
                   ))}
                 </div>
@@ -214,12 +206,11 @@ export default function HomePage() {
             </Card>
           )}
 
-          {/* Subscription near renewal */}
           {nearRenewalSubs.length > 0 && (
             <Card className="border-amber-500/20">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-white">💳 Renewal Segera</h3>
+                  <h3 className="text-sm font-semibold text-white">Renewal Segera</h3>
                   <Link href="/subscriptions" className="text-xs text-blue-400 hover:underline">Lihat semua</Link>
                 </div>
                 <div className="space-y-2">
@@ -228,11 +219,11 @@ export default function HomePage() {
                     const color = days <= 1 ? 'text-red-400' : days <= 3 ? 'text-orange-400' : 'text-amber-400';
                     return (
                       <div key={s.id} className="flex items-center gap-2">
-                        <span className={`text-xs font-bold ${color} w-10 flex-shrink-0`}>
+                        <span className={`text-xs font-bold ${color} w-12 shrink-0`}>
                           {days === 0 ? 'HARI INI' : days === 1 ? 'BESOK' : `H-${days}`}
                         </span>
                         <span className="text-sm text-slate-300 flex-1 truncate">{s.nama}</span>
-                        <span className="text-[10px] text-slate-500">Rp {(s.nominal || 0).toLocaleString('id-ID')}</span>
+                        <span className="text-xs text-slate-500">Rp {(s.nominal || 0).toLocaleString('id-ID')}</span>
                       </div>
                     );
                   })}
@@ -245,18 +236,18 @@ export default function HomePage() {
 
       {/* Calendar strip */}
       <div>
-        <h2 className="text-xs sm:text-sm font-semibold text-slate-400 mb-2 sm:mb-3">📅 10 Hari ke Depan</h2>
+        <h2 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2.5">10 Hari ke Depan</h2>
         <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 no-scrollbar">
           {calDays.map(({ d, dStr, dots }) => (
-            <div key={dStr} className={`flex-shrink-0 w-12 sm:w-14 rounded-xl p-1.5 sm:p-2 text-center border transition-all ${
+            <div key={dStr} className={`shrink-0 w-12 sm:w-14 rounded-lg p-1.5 sm:p-2 text-center border transition-colors ${
               dStr === today
-                ? 'bg-blue-600/20 border-blue-500/50 shadow-sm shadow-blue-500/20'
-                : 'bg-slate-800/50 border-slate-700/50 hover:border-slate-600/50'
+                ? 'bg-blue-500/10 border-blue-500/30'
+                : 'bg-slate-900/50 border-slate-800 hover:border-slate-700'
             }`}>
-              <p className={`text-[10px] sm:text-xs ${dStr === today ? 'text-blue-300 font-medium' : 'text-slate-500'}`}>
+              <p className={`text-xs ${dStr === today ? 'text-blue-400 font-medium' : 'text-slate-500'}`}>
                 {format(d, 'EEE', { locale: id })}
               </p>
-              <p className={`text-base sm:text-lg font-bold ${dStr === today ? 'text-white' : 'text-slate-300'}`}>
+              <p className={`text-lg font-semibold ${dStr === today ? 'text-white' : 'text-slate-300'}`}>
                 {format(d, 'd')}
               </p>
               <div className="flex justify-center gap-0.5 mt-1 h-1.5">
@@ -269,22 +260,22 @@ export default function HomePage() {
 
       {/* Role progress */}
       <div>
-        <h2 className="text-xs sm:text-sm font-semibold text-slate-400 mb-2 sm:mb-3">👑 Progress per Peran</h2>
+        <h2 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2.5">Progress per Peran</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
           {roleProgress.map(({ role, done, total }) => {
             const cfg = ROLE_CONFIG[role];
             return (
               <Link key={role} href={`/role/${role}`}>
-                <Card className="hover:border-slate-600 cursor-pointer transition-all hover:shadow-md hover:shadow-slate-900/50 active:scale-[0.98]">
+                <Card className="hover:border-slate-700 transition-colors">
                   <CardContent className="p-3 sm:p-4">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-base sm:text-lg">{cfg?.emoji}</span>
-                      <span className="text-xs sm:text-sm font-medium text-white truncate">{role}</span>
+                      <span className="text-base">{cfg?.emoji}</span>
+                      <span className="text-sm font-medium text-white truncate">{role}</span>
                     </div>
-                    <p className="text-[10px] sm:text-xs text-slate-400 mb-1.5">{done}/{total} selesai</p>
+                    <p className="text-xs text-slate-500 mb-1.5">{done}/{total} selesai</p>
                     <ProgressBar value={done} max={total || 1} colorClass={
                       cfg?.color === 'pink' ? 'bg-pink-500' :
-                      cfg?.color === 'green' ? 'bg-green-500' :
+                      cfg?.color === 'green' ? 'bg-emerald-500' :
                       cfg?.color === 'purple' ? 'bg-purple-500' :
                       cfg?.color === 'amber' ? 'bg-amber-500' :
                       'bg-blue-500'

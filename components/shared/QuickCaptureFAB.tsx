@@ -137,22 +137,25 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
 
   return (
     <>
-      {/* FAB button - positioned above bottom nav on mobile */}
+      {/* FAB button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-amber-500 hover:bg-amber-400 text-white shadow-xl shadow-amber-500/30 flex items-center justify-center text-xl sm:text-2xl transition-all hover:scale-110 active:scale-95"
+        className="fixed bottom-20 md:bottom-6 right-4 z-40 w-12 h-12 rounded-full bg-amber-500 hover:bg-amber-400 text-white shadow-lg shadow-amber-500/20 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
         title="Parkir Ide (Ctrl+Q)"
-      >💡</button>
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+      </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="relative z-10 w-full sm:max-w-md bg-slate-900 border border-slate-700 rounded-t-2xl sm:rounded-2xl shadow-2xl p-4 sm:p-5">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="relative z-10 w-full sm:max-w-md bg-slate-900 border border-slate-800 rounded-t-xl sm:rounded-lg shadow-2xl p-4 sm:p-5 animate-slide-up sm:animate-none">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">💡</span>
-              <h3 className="text-white font-semibold text-sm sm:text-base">Parkir Ide</h3>
+              <h3 className="text-white font-semibold text-sm">Parkir Ide</h3>
               <span className="ml-auto text-xs text-slate-500 hidden sm:inline">Ctrl+Q</span>
-              <button onClick={() => setOpen(false)} className="sm:hidden text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+              <button onClick={() => setOpen(false)} className="sm:hidden text-slate-500 hover:text-white p-1 rounded-md">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 1l12 12M13 1L1 13"/></svg>
+              </button>
             </div>
             <div className="relative">
               <Input
@@ -160,20 +163,20 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
                 value={input}
                 onChange={e => handleChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Tulis ide... @role #kategori (opsional)"
+                placeholder="Tulis ide... @role #kategori"
                 className="pr-16"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 hidden sm:inline">Enter ↵</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-600 hidden sm:inline">Enter ↵</span>
             </div>
 
             {dropdown && currentOpts.length > 0 && (
-              <div className="mt-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+              <div className="mt-1 bg-slate-800 border border-slate-700 rounded-lg overflow-hidden max-h-40 overflow-y-auto">
                 {currentOpts.map((opt, idx) => (
                   <button
                     key={opt}
                     onClick={() => insertFromOpts(opt)}
                     className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                      idx === highlight ? 'bg-blue-600/30 text-white' : 'text-slate-300 hover:bg-slate-700 active:bg-slate-600'
+                      idx === highlight ? 'bg-blue-600/20 text-white' : 'text-slate-300 hover:bg-slate-800'
                     }`}
                   >
                     {dropdown === 'role' ? '@' : '#'}{opt.toLowerCase().replace(' ', '')}
@@ -184,11 +187,11 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
 
             <div className="flex gap-2 mt-3">
               <Button onClick={handleSave} disabled={saving || !input.trim()} className="flex-1">
-                {saved ? '✅ Tersimpan!' : saving ? 'Menyimpan...' : 'Simpan'}
+                {saved ? 'Tersimpan!' : saving ? 'Menyimpan...' : 'Simpan'}
               </Button>
               <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
             </div>
-            <p className="text-[10px] sm:text-xs text-slate-500 mt-2 text-center">Tag @role dan #kategori bersifat opsional</p>
+            <p className="text-xs text-slate-600 mt-2 text-center">@role dan #kategori opsional</p>
           </div>
         </div>
       )}

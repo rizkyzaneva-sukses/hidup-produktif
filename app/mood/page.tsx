@@ -125,7 +125,7 @@ export default function MoodPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-5">
       <div>
-        <h1 className="text-lg sm:text-xl font-bold text-white">😊 Mood & Energy</h1>
+        <h1 className="text-lg sm:text-lg font-semibold text-white">Mood & Energy</h1>
         <p className="text-slate-400 text-xs sm:text-sm">Lacak energi dan mood harianmu</p>
       </div>
 
@@ -135,19 +135,19 @@ export default function MoodPage() {
           <Card>
             <CardContent className="text-center py-3">
               <p className="text-xl font-bold text-white">{avgEnergy.toFixed(1)}</p>
-              <p className="text-[10px] sm:text-xs text-slate-400">Rata-rata Energi</p>
+              <p className="text-xs sm:text-xs text-slate-400">Rata-rata Energi</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="text-center py-3">
               <p className="text-xl font-bold text-white">{mostProductiveHour > 0 ? hourLabel(mostProductiveHour) : '—'}</p>
-              <p className="text-[10px] sm:text-xs text-slate-400">Jam Produktif</p>
+              <p className="text-xs sm:text-xs text-slate-400">Jam Produktif</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="text-center py-3">
               <p className="text-xl">{dominantMood ? MOOD_EMOJIS[dominantMood] : '—'}</p>
-              <p className="text-[10px] sm:text-xs text-slate-400">Mood Dominan</p>
+              <p className="text-xs sm:text-xs text-slate-400">Mood Dominan</p>
             </CardContent>
           </Card>
         </div>
@@ -162,16 +162,16 @@ export default function MoodPage() {
               const entry = todayEntries.find((e: MoodEntry) => e.hour === h);
               return (
                 <button key={h} onClick={() => clickHour(today, h)}
-                  className={`relative flex flex-col items-center p-1.5 sm:p-2 rounded-xl border transition-all active:scale-95 ${
+                  className={`relative flex flex-col items-center p-1.5 sm:p-2 rounded-lg border transition-all active:scale-95 ${
                     entry
                       ? `${ENERGY_COLORS_LIGHT[entry.energy]}`
                       : 'border-slate-700/50 bg-slate-800/30 hover:border-slate-600'
                   }`}>
-                  <span className="text-[10px] text-slate-400 font-mono">{hourLabel(h)}</span>
+                  <span className="text-xs text-slate-400 font-mono">{hourLabel(h)}</span>
                   {entry ? (
                     <>
                       <span className="text-base sm:text-lg my-0.5">{MOOD_EMOJIS[entry.mood] || '😐'}</span>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full text-white font-medium ${ENERGY_COLORS[entry.energy]}`}>
+                      <span className={`text-xs px-1.5 py-0.5 rounded-full text-white font-medium ${ENERGY_COLORS[entry.energy]}`}>
                         E{entry.energy}
                       </span>
                     </>
@@ -193,15 +193,15 @@ export default function MoodPage() {
             <div className="min-w-[600px]">
               {/* Hour labels */}
               <div className="flex items-center gap-0.5 mb-1">
-                <span className="w-10 text-[9px] text-slate-500" />
+                <span className="w-10 text-xs text-slate-500" />
                 {HOURS.filter((_, i) => i % 2 === 0).map(h => (
-                  <span key={h} className="text-[9px] text-slate-500 w-8 text-center">{hourLabel(h)}</span>
+                  <span key={h} className="text-xs text-slate-500 w-8 text-center">{hourLabel(h)}</span>
                 ))}
               </div>
               {/* Day rows */}
               {heatmapDays.map(({ dateStr, dayLabel, entries }) => (
                 <div key={dateStr} className="flex items-center gap-0.5 mb-0.5">
-                  <span className="w-10 text-[9px] text-slate-400 truncate">{dayLabel}</span>
+                  <span className="w-10 text-xs text-slate-400 truncate">{dayLabel}</span>
                   {HOURS.map(h => {
                     const entry = entries.find((e: MoodEntry) => e.hour === h);
                     return (
@@ -219,7 +219,7 @@ export default function MoodPage() {
                 {[1, 2, 3, 4, 5].map(e => (
                   <div key={e} className="flex items-center gap-1">
                     <div className={`w-3 h-3 rounded-sm ${ENERGY_COLORS[e]}`} />
-                    <span className="text-[9px] text-slate-500">E{e}</span>
+                    <span className="text-xs text-slate-500">E{e}</span>
                   </div>
                 ))}
               </div>
@@ -232,15 +232,15 @@ export default function MoodPage() {
       {Object.keys(moodCounts).length > 0 && (
         <Card>
           <CardContent>
-            <p className="text-xs text-slate-400 font-medium mb-3">📊 Tren Mood</p>
+            <p className="text-xs text-slate-400 font-medium mb-3">Tren Mood</p>
             <div className="flex flex-wrap gap-2">
               {MOODS.map(m => (
-                <div key={m} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${
+                <div key={m} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border ${
                   moodCounts[m] ? 'border-slate-600 bg-slate-800/60' : 'border-slate-700/30 bg-slate-800/20'
                 }`}>
                   <span>{MOOD_EMOJIS[m]}</span>
                   <span className="text-xs text-slate-300">{m}</span>
-                  <span className="text-[10px] text-slate-500">({moodCounts[m] || 0})</span>
+                  <span className="text-xs text-slate-500">({moodCounts[m] || 0})</span>
                 </div>
               ))}
             </div>
@@ -249,18 +249,18 @@ export default function MoodPage() {
       )}
 
       {allEntries.length === 0 && (
-        <EmptyState icon="😊" title="Belum ada data mood" desc="Klik jam pada grid di atas untuk mulai mencatat" />
+        <EmptyState  title="Belum ada data mood" desc="Klik jam pada grid di atas untuk mulai mencatat" />
       )}
 
       {/* Log dialog */}
       {selectedEntry && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedEntry(null)} />
-          <div className="relative z-10 w-full sm:max-w-md bg-slate-900 border border-slate-700 shadow-2xl rounded-t-2xl sm:rounded-2xl p-4">
+          <div className="relative z-10 w-full sm:max-w-md bg-slate-900 border border-slate-700 shadow-2xl rounded-t-xl sm:rounded-lg p-4">
             <h2 className="text-sm font-semibold text-white mb-1">
               Log Jam {hourLabel(selectedEntry.hour)}
             </h2>
-            <p className="text-[10px] text-slate-500 mb-3">{format(new Date(selectedEntry.date), 'EEEE, d MMMM yyyy', { locale: id })}</p>
+            <p className="text-xs text-slate-500 mb-3">{format(new Date(selectedEntry.date), 'EEEE, d MMMM yyyy', { locale: id })}</p>
 
             <div className="space-y-4">
               {/* Energy slider */}
@@ -269,7 +269,7 @@ export default function MoodPage() {
                 <div className="flex gap-1.5">
                   {[1, 2, 3, 4, 5].map(e => (
                     <button key={e} onClick={() => setEnergy(e)}
-                      className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
                         energy === e ? `${ENERGY_COLORS[e]} text-white scale-105` : 'bg-slate-800 text-slate-400 border border-slate-700'
                       }`}>
                       {e}
@@ -280,11 +280,11 @@ export default function MoodPage() {
 
               {/* Mood selector */}
               <div>
-                <label className="text-xs text-slate-400 mb-2 block">😊 Mood</label>
+                <label className="text-xs text-slate-400 mb-2 block">Mood</label>
                 <div className="flex flex-wrap gap-2">
                   {MOODS.map(m => (
                     <button key={m} onClick={() => setMood(m)}
-                      className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                         mood === m ? 'bg-blue-600/30 border border-blue-500/50 text-white' : 'bg-slate-800 border border-slate-700 text-slate-400'
                       }`}>
                       <span>{MOOD_EMOJIS[m]}</span>
@@ -296,11 +296,11 @@ export default function MoodPage() {
 
               {/* Notes */}
               <div>
-                <label className="text-xs text-slate-400 mb-1 block">📝 Catatan</label>
+                <label className="text-xs text-slate-400 mb-1 block">Catatan</label>
                 <textarea
                   value={notes} onChange={e => setNotes(e.target.value)} rows={2}
                   placeholder="Apa yang kamu lakukan?"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
                 />
               </div>
 

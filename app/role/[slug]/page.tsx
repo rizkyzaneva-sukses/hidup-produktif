@@ -57,7 +57,7 @@ export default function RolePage({ params }: { params: Promise<{ slug: string }>
   return (
     <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
       {/* Header */}
-      <div className={`p-5 rounded-2xl bg-gradient-to-r ${bgGradient} to-transparent border ${cfg?.border || 'border-slate-700/50'}`}>
+      <div className={`p-5 rounded-lg bg-gradient-to-r ${bgGradient} to-transparent border ${cfg?.border || 'border-slate-700/50'}`}>
         <div className="flex items-center gap-3">
           <span className="text-4xl">{cfg?.emoji || '⭐'}</span>
           <div>
@@ -89,7 +89,7 @@ export default function RolePage({ params }: { params: Promise<{ slug: string }>
 
       {/* Tasks */}
       <div>
-        {activeTasks.length === 0 ? <EmptyState icon="✅" title="Tidak ada task aktif" /> : (
+        {activeTasks.length === 0 ? <EmptyState  title="Tidak ada task aktif" /> : (
           <div className="space-y-2">
             {activeTasks.map((t: any) => (
               <div key={t.id} className="flex items-center gap-3 p-3 rounded-lg border border-slate-700/50 bg-slate-800/40">
@@ -122,7 +122,7 @@ export default function RolePage({ params }: { params: Promise<{ slug: string }>
       {/* Projects */}
       {projects.length > 0 && (
         <div>
-          <h2 className="text-sm font-medium text-slate-400 mb-2">🗂 Proyek Aktif</h2>
+          <h2 className="text-sm font-medium text-slate-400 mb-2">Proyek Aktif</h2>
           <div className="space-y-2">
             {projects.map((p: any) => {
               const done = p.subtasks.filter((s: any) => s.completed).length;

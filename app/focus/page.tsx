@@ -200,7 +200,7 @@ export default function FocusPage() {
     <div className="p-4 md:p-6 max-w-xl mx-auto">
       {/* Break reminder banner */}
       {breakBanner && (
-        <div className="mb-4 p-3 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center gap-2 animate-pulse">
+        <div className="mb-4 p-3 rounded-lg bg-green-500/20 border border-green-500/30 flex items-center gap-2 animate-pulse">
           <span className="text-xl">🎉</span>
           <p className="text-sm text-green-300 font-medium flex-1">Time for a break! Bersantai sejenak...</p>
           <button onClick={() => setBreakBanner(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
@@ -209,7 +209,7 @@ export default function FocusPage() {
 
       <div className="flex items-start justify-between mb-1">
         <div>
-          <h1 className="text-xl font-bold text-white">⏱ Focus Mode</h1>
+          <h1 className="text-xl font-bold text-white">Focus Mode</h1>
           <p className="text-slate-400 text-sm">Teknik Pomodoro untuk kerja fokus</p>
         </div>
         {hydrated && completedPomodoros > 0 && (
@@ -221,7 +221,7 @@ export default function FocusPage() {
 
       {/* Total focus time today */}
       {hydrated && completedPomodoros > 0 && (
-        <div className="mb-5 mt-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-between">
+        <div className="mb-5 mt-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-between">
           <div>
             <p className="text-xs text-slate-400">Total fokus hari ini</p>
             <p className="text-lg font-bold text-red-400">{formatFocusTime(totalFocusMinutes)}</p>
@@ -235,7 +235,7 @@ export default function FocusPage() {
 
       {/* Total minggu ini */}
       {weeklyTotalMinutes > 0 && (
-        <div className="mb-5 mt-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between">
+        <div className="mb-5 mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-between">
           <div>
             <p className="text-xs text-slate-400">Total minggu ini</p>
             <p className="text-lg font-bold text-blue-400">{formatFocusTime(weeklyTotalMinutes)}</p>
@@ -248,7 +248,7 @@ export default function FocusPage() {
       )}
 
       {/* Mode selector */}
-      <div className="flex gap-1 bg-slate-800/60 p-1 rounded-xl mb-6">
+      <div className="flex gap-1 bg-slate-800/60 p-1 rounded-lg mb-6">
         {MODES.map((m, i) => (
           <button key={m.label} onClick={() => setModeIdx(i)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${modeIdx === i ? `${m.bg} ${m.color}` : 'text-slate-400 hover:text-white'}`}>
@@ -275,7 +275,7 @@ export default function FocusPage() {
                 {Array.from({ length: Math.min(completedPomodoros, 8) }).map((_, i) => (
                   <span key={i} className="w-2 h-2 rounded-full bg-red-400" />
                 ))}
-                {completedPomodoros > 8 && <span className="text-[10px] text-red-400">+{completedPomodoros - 8}</span>}
+                {completedPomodoros > 8 && <span className="text-xs text-red-400">+{completedPomodoros - 8}</span>}
               </div>
             )}
           </div>
@@ -295,7 +295,7 @@ export default function FocusPage() {
       <div className="mb-5">
         <label className="text-sm text-slate-400 block mb-2">Task yang sedang dikerjakan</label>
         <select value={selectedTaskId} onChange={e => setSelectedTaskId(e.target.value)}
-          className="w-full h-10 px-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+          className="w-full h-10 px-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50">
           <option value="">— Pilih task —</option>
           {tasks.map((t: any) => (
             <option key={t.id} value={t.id}>[{t.role}] {t.title}</option>
@@ -306,7 +306,7 @@ export default function FocusPage() {
       {/* Session log */}
       {hydrated && logs.length > 0 && (
         <div>
-          <h2 className="text-sm font-medium text-slate-400 mb-2">📝 Log Sesi Hari Ini</h2>
+          <h2 className="text-sm font-medium text-slate-400 mb-2">Log Sesi Hari Ini</h2>
           <div className="space-y-1.5">
             {logs.map((log, i) => (
               <div key={i} className="flex items-center gap-3 text-sm">

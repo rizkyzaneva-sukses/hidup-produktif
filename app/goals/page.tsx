@@ -103,19 +103,19 @@ export default function GoalsPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-4 sm:space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-lg sm:text-xl font-bold text-white">🎯 Goals</h1>
+          <h1 className="text-lg font-semibold text-white">Goals</h1>
           <p className="text-slate-400 text-xs sm:text-sm">Tujuan mingguan & quarterly</p>
         </div>
       </div>
 
       {/* Tab selector */}
-      <div className="flex gap-1 bg-slate-800/60 p-1 rounded-xl">
+      <div className="flex gap-1 bg-slate-800/60 p-1 rounded-lg">
         {(['Mingguan', 'Quarterly'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors ${
               tab === t ? 'bg-blue-600/20 text-blue-300' : 'text-slate-400 hover:text-white'
             }`}>
-            {t === 'Mingguan' ? '📅 Mingguan' : '📊 Quarterly'}
+            {t === 'Mingguan' ? 'Mingguan' : 'Quarterly'}
           </button>
         ))}
       </div>
@@ -137,11 +137,11 @@ export default function GoalsPage() {
           )}
 
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">🎯 Goal mingguan</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">Goal mingguan</p>
             <Button size="sm" onClick={() => setShowAddWeekly(true)}>+ Goal</Button>
           </div>
 
-          {weeklyGoals.length === 0 && <EmptyState icon="🎯" title="Belum ada goal" desc="Tambah goal mingguan pertamamu" />}
+          {weeklyGoals.length === 0 && <EmptyState  title="Belum ada goal" desc="Tambah goal mingguan pertamamu" />}
 
           {Object.entries(goalsByRole).map(([role, goals]) => (
             <div key={role} className="space-y-2">
@@ -156,7 +156,7 @@ export default function GoalsPage() {
                       <p className="text-sm font-medium text-white truncate">{goal.title}</p>
                       <div className="flex items-center gap-2 mt-1.5">
                         <ProgressBar value={goal.completed} max={goal.target} colorClass="bg-blue-500" className="flex-1" />
-                        <span className="text-[10px] text-slate-400 flex-shrink-0">{goal.completed}/{goal.target}</span>
+                        <span className="text-xs text-slate-400 flex-shrink-0">{goal.completed}/{goal.target}</span>
                       </div>
                     </div>
                     <div className="flex gap-1 flex-shrink-0">
@@ -189,11 +189,11 @@ export default function GoalsPage() {
           </div>
 
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">📊 OKR Q{qQuarter} {qYear}</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wider font-medium">OKR Q{qQuarter} {qYear}</p>
             <Button size="sm" onClick={() => setShowAddQuarterly(true)}>+ OKR</Button>
           </div>
 
-          {quarterlyGoals.length === 0 && <EmptyState icon="📊" title="Belum ada OKR" desc="Buat goal quarterly pertamamu" />}
+          {quarterlyGoals.length === 0 && <EmptyState  title="Belum ada OKR" desc="Buat goal quarterly pertamamu" />}
 
           <div className="space-y-3">
             {quarterlyGoals.map((goal: QuarterlyGoal) => {
@@ -268,7 +268,7 @@ function AddWeeklyGoalForm({ weekStart, onCreate, onCancel }: { weekStart: strin
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative z-10 w-full sm:max-w-lg bg-slate-900 border border-slate-700 shadow-2xl rounded-t-2xl sm:rounded-2xl p-4">
+      <div className="relative z-10 w-full sm:max-w-lg bg-slate-900 border border-slate-700 shadow-2xl rounded-t-xl sm:rounded-lg p-4">
         <h2 className="text-sm sm:text-base font-semibold text-white mb-3">➕ Tambah Goal Mingguan</h2>
         <div className="space-y-3">
           <Input placeholder="Judul goal *" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} />
@@ -299,7 +299,7 @@ function AddQuarterlyGoalForm({ quarter, year, onCreate, onCancel }: { quarter: 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative z-10 w-full sm:max-w-lg bg-slate-900 border border-slate-700 shadow-2xl rounded-t-2xl sm:rounded-2xl p-4">
+      <div className="relative z-10 w-full sm:max-w-lg bg-slate-900 border border-slate-700 shadow-2xl rounded-t-xl sm:rounded-lg p-4">
         <h2 className="text-sm sm:text-base font-semibold text-white mb-3">➕ Tambah OKR Q{quarter}</h2>
         <div className="space-y-3">
           <Input placeholder="Judul objektif *" value={title} onChange={e => setTitle(e.target.value)} />
@@ -307,7 +307,7 @@ function AddQuarterlyGoalForm({ quarter, year, onCreate, onCancel }: { quarter: 
             placeholder="Key Results (satu per baris)&#10;Contoh:&#10;Mencapai revenue Rp 100jt&#10;Memiliki 500 user aktif"
             value={keyResultsText} onChange={e => setKeyResultsText(e.target.value)}
             rows={4}
-            className="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+            className="w-full px-3 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
           />
           <div className="flex gap-2">
             <Button onClick={submit} className="flex-1" disabled={!title.trim()}>Simpan</Button>
@@ -330,7 +330,7 @@ function KREditor({ goal, onSave, onCancel }: { goal: QuarterlyGoal; onSave: (d:
       <textarea
         value={text} onChange={e => setText(e.target.value)} rows={3}
         placeholder="Key Results (satu per baris)"
-        className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
+        className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
       />
       <div className="flex items-center gap-2">
         <label className="text-xs text-slate-400">Progress:</label>

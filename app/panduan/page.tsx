@@ -481,7 +481,7 @@ function FeatureCard({ feature }: { feature: Feature }) {
 
           {/* Tips */}
           {feature.tips && feature.tips.length > 0 && (
-            <div className="bg-slate-700/30 rounded-xl p-3">
+            <div className="bg-slate-700/30 rounded-lg p-3">
               <h4 className="text-xs font-semibold text-amber-400/80 uppercase tracking-wider mb-2">💡 Tips</h4>
               <ul className="space-y-1.5">
                 {feature.tips.map((tip, i) => (
@@ -664,10 +664,10 @@ export default function PanduanPage() {
               <a
                 key={item.href}
                 href={item.href}
-                className="flex flex-col items-center gap-1 p-2 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 transition-colors text-center"
+                className="flex flex-col items-center gap-1 p-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors text-center"
               >
                 <span className="text-lg sm:text-xl">{item.emoji}</span>
-                <span className="text-[10px] sm:text-xs text-slate-400">{item.label}</span>
+                <span className="text-xs sm:text-xs text-slate-400">{item.label}</span>
               </a>
             ))}
           </div>
@@ -772,10 +772,10 @@ export default function PanduanPage() {
                   { emoji: '🏠', name: 'Anak', desc: 'Orang tua & keluarga' },
                   { emoji: '📖', name: 'Pelajar', desc: 'Belajar & pengembangan' },
                 ].map(role => (
-                  <div key={role.name} className="text-center p-3 rounded-xl bg-slate-700/30 border border-slate-700/50">
+                  <div key={role.name} className="text-center p-3 rounded-lg bg-slate-700/30 border border-slate-700/50">
                     <span className="text-2xl">{role.emoji}</span>
                     <p className="text-xs font-semibold text-white mt-1">{role.name}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{role.desc}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{role.desc}</p>
                   </div>
                 ))}
               </div>
