@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.title !== undefined) data.title = body.title;
     if (body.target !== undefined) data.target = body.target;
     if (body.completed !== undefined) data.completed = body.completed;
-    if (body.completed_count !== undefined) data.completedCount = body.completed_count;
+    if (body.completed_count !== undefined) data.completed = body.completed_count;
     if (body.notes !== undefined) data.notes = body.notes || null;
 
     const goal = await prisma.weeklyGoal.update({
@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({
       ...goal,
       week_start: goal.weekStart,
-      completed_count: goal.completedCount,
+      completed_count: goal.completed,
     });
   } catch (error: any) {
     console.error('[API] PATCH /api/weekly-goals/[id] error:', error?.message);

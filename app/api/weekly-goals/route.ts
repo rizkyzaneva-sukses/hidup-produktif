@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(goals.map((g: any) => ({
       ...g,
       week_start: g.weekStart,
-      completed_count: g.completedCount,
+      completed_count: g.completed,
     })));
   } catch (error: any) {
     console.error('[API] GET /api/weekly-goals error:', error?.message);
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       for (const item of body.update_completed) {
         await prisma.weeklyGoal.update({
           where: { id: item.id },
-          data: { completedCount: item.completed_count },
+          data: { completed: item.completed_count },
         });
       }
       return NextResponse.json({ ok: true });
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ...goal,
       week_start: goal.weekStart,
-      completed_count: goal.completedCount,
+      completed_count: goal.completed,
     });
   } catch (error: any) {
     console.error('[API] POST /api/weekly-goals error:', error?.message);
