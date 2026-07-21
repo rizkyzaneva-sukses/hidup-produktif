@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { format, startOfWeek } from 'date-fns';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
@@ -52,6 +52,7 @@ function saveStorage(completedPomodoros: number, logs: any[]) {
 }
 
 export default function FocusPage() {
+  const qc = useQueryClient();
   const [modeIdx, setModeIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState(MODES[0].duration);
   const [running, setRunning] = useState(false);
@@ -59,13 +60,24 @@ export default function FocusPage() {
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
   const [logs, setLogs] = useState<{ task: string; time: string; mode: string }[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [breakBanner, setBreakBanner] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const sessionStartRef = useRef<number>(Date.now());
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks-focus'],
     queryFn: () => fetcher('/api/tasks?completed=false'),
   });
+
+  // Weekly focus sessions from DB
+  const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+  const { data: weekSessions = [] } = useQuery({
+    queryKey: ['focus-sessions', weekStart],
+    queryFn: () => fetcher(`/api/focus-sessions?from=${weekStart}`),
+  });
+
+  const weeklyTotalMinutes = weekSessions.reduce((sum: number, s: any) => sum + (s.duration_minutes || 0), 0);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -82,7 +94,27 @@ export default function FocusPage() {
   useEffect(() => {
     setTimeLeft(mode.duration);
     setRunning(false);
+    sessionStartRef.current = Date.now();
   }, [modeIdx]);
+
+  // Save session to DB
+  const saveSession = async (modeLabel: string, startTime: number, endTime: number) => {
+    try {
+      await fetch('/api/focus-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task_id: selectedTaskId || undefined,
+          mode: modeLabel,
+          start_time: new Date(startTime).toISOString(),
+          end_time: new Date(endTime).toISOString(),
+          duration_minutes: Math.round((endTime - startTime) / 60000),
+          date: todayDateStr(),
+        }),
+      });
+      qc.invalidateQueries({ queryKey: ['focus-sessions'] });
+    } catch {}
+  };
 
   useEffect(() => {
     if (running) {
@@ -92,7 +124,10 @@ export default function FocusPage() {
             clearInterval(intervalRef.current!);
             setRunning(false);
             playDing();
+            const endTime = Date.now();
+
             if (modeIdx === 0) {
+              // Pomodoro completed
               setCompletedPomodoros(c => {
                 const next = c + 1;
                 setLogs(prevLogs => {
@@ -108,6 +143,18 @@ export default function FocusPage() {
                 });
                 return next;
               });
+              // Save to DB & show break reminder
+              saveSession('Pomodoro', sessionStartRef.current, endTime);
+              setBreakBanner(true);
+              // Auto-switch to short break after 3 seconds
+              setTimeout(() => {
+                setBreakBanner(false);
+                setModeIdx(1); // Switch to Short Break
+              }, 3000);
+            } else {
+              // Break completed
+              const breakLabel = modeIdx === 1 ? 'Short Break' : 'Long Break';
+              saveSession(breakLabel, sessionStartRef.current, endTime);
             }
             return 0;
           }
@@ -151,6 +198,15 @@ export default function FocusPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-xl mx-auto">
+      {/* Break reminder banner */}
+      {breakBanner && (
+        <div className="mb-4 p-3 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center gap-2 animate-pulse">
+          <span className="text-xl">🎉</span>
+          <p className="text-sm text-green-300 font-medium flex-1">Time for a break! Bersantai sejenak...</p>
+          <button onClick={() => setBreakBanner(false)} className="text-slate-400 hover:text-white text-xs">✕</button>
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-1">
         <div>
           <h1 className="text-xl font-bold text-white">⏱ Focus Mode</h1>
@@ -173,6 +229,20 @@ export default function FocusPage() {
           <div className="text-right">
             <p className="text-xs text-slate-400">Pomodoro selesai</p>
             <p className="text-2xl font-bold text-white">{completedPomodoros} 🍅</p>
+          </div>
+        </div>
+      )}
+
+      {/* Total minggu ini */}
+      {weeklyTotalMinutes > 0 && (
+        <div className="mb-5 mt-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between">
+          <div>
+            <p className="text-xs text-slate-400">Total minggu ini</p>
+            <p className="text-lg font-bold text-blue-400">{formatFocusTime(weeklyTotalMinutes)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-400">Sesi dari DB</p>
+            <p className="text-2xl font-bold text-white">{weekSessions.length} ⏱</p>
           </div>
         </div>
       )}

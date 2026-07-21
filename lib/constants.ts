@@ -14,6 +14,7 @@ export const WORK_TYPES = ['Deep Work', 'Admin', 'Shallow'];
 export const IDEA_CATEGORIES = ['Bisnis', 'Produk', 'Maulana Farm', 'Keuangan', 'Personal', 'Random'];
 export const IDEA_STATUSES = ['Mentah', 'Diproses', 'Dieksekusi'];
 export const FREQUENCIES = ['Sekali', 'Harian', 'Mingguan', 'Bulanan'];
+export const MOODS = ['Sangat Baik', 'Baik', 'Netral', 'Kurang Baik', 'Buruk'];
 export const LEARNING_TYPES = ['Buku', 'Podcast', 'Video', 'Artikel'];
 export const PROJECT_STATUSES = ['Aktif', 'Selesai', 'Ditunda'];
 export const SUB_CATEGORIES = ['Software', 'Ecourse'];
@@ -73,3 +74,28 @@ export const SHOLAT_TIMES = {
   Maghrib: '18:00',
   Isya: '19:15',
 };
+
+export const RECURRENCE_OPTIONS = ['Harian', 'Mingguan', 'Bulanan'];
+
+export const MOODS = ['Sangat Baik', 'Baik', 'Netral', 'Kurang Baik', 'Buruk'];
+
+export const TASK_TEMPLATES_DEFAULT = [
+  {
+    name: 'Rutinitas Pagi',
+    role: 'CEO',
+    emoji: '🌅',
+    tasks: ['Sholat Subuh', 'Olahraga', 'Baca'],
+  },
+  {
+    name: 'Rutinitas Ayah',
+    role: 'Ayah',
+    emoji: '👨‍👧‍👦',
+    tasks: ['Ajak anak belajar', 'Main bersama', 'Cerita sebelum tidur'],
+  },
+  {
+    name: 'Weekly Review',
+    role: 'CEO',
+    emoji: '📋',
+    tasks: ['Review mingguan', 'Set goals minggu depan', 'Refleksi'],
+  },
+];

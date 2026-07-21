@@ -28,6 +28,7 @@ export default function HabitsPage() {
   }, [habits.length]);
 
   const todayLogs = allLogs.filter((l: any) => l.date === today);
+  const [streakGoalInputs, setStreakGoalInputs] = useState<Record<string, string>>({});
 
   const toggleHabit = useMutation({
     mutationFn: async (habitId: string) => {
@@ -130,16 +131,25 @@ export default function HabitsPage() {
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   <p className="text-base sm:text-lg">{isDone ? '✅' : '○'}</p>
-                  {/* 7-day dots */}
+                  {/* 7-day dots with goal line */}
                   <div className="flex gap-0.5">
-                    {getLast7Days(h.id).map(({ d, done: dayDone }) => (
-                      <span key={d} title={d}
-                        className={`w-2 h-2 rounded-full ${
-                          dayDone ? 'bg-green-400' : 'bg-slate-700'
-                        }`} />
-                    ))}
+                    {getLast7Days(h.id).map(({ d, done: dayDone }, idx) => {
+                      const streakGoal = h.streak_goal || 0;
+                      const isGoalDay = streakGoal > 0 && idx === streakGoal - 1;
+                      return (
+                        <span key={d} title={d}
+                          className={`w-2 h-2 rounded-full ${
+                            dayDone ? 'bg-green-400' : isGoalDay ? 'ring-1 ring-amber-400 bg-slate-700' : 'bg-slate-700'
+                          }`} />
+                      );
+                    })}
                   </div>
                   {streak > 0 && <p className="text-[10px] text-amber-400">🔥 {streak}d</p>}
+                  {h.streak_goal > 0 && (
+                    <p className={`text-[10px] ${streak >= h.streak_goal ? 'text-yellow-300 font-bold' : 'text-slate-500'}`}>
+                      {streak >= h.streak_goal ? '🎉' : ''} {streak}/{h.streak_goal}
+                    </p>
+                  )}
                 </div>
               </div>
             );
@@ -155,6 +165,24 @@ export default function HabitsPage() {
               <span className="text-lg sm:text-xl">{h.emoji}</span>
               <span className="flex-1 text-xs sm:text-sm text-white min-w-0 truncate">{h.label}</span>
               {h.pinned && <span className="text-[10px] sm:text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full flex-shrink-0">📌</span>}
+              {/* Streak goal input */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <span className="text-[10px] text-slate-500 hidden sm:inline">🎯</span>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="Goal"
+                  value={streakGoalInputs[h.id] ?? (h.streak_goal || '')}
+                  onChange={e => setStreakGoalInputs(prev => ({ ...prev, [h.id]: e.target.value }))}
+                  onBlur={() => {
+                    const val = Number(streakGoalInputs[h.id] ?? h.streak_goal) || 0;
+                    if (val !== (h.streak_goal || 0)) {
+                      updateHabit.mutate({ id: h.id, streak_goal: val });
+                    }
+                  }}
+                  className="w-12 sm:w-14 h-7 px-1.5 rounded-lg bg-slate-700 border border-slate-600 text-white text-[10px] sm:text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                />
+              </div>
               <Toggle checked={h.active} onChange={v => updateHabit.mutate({ id: h.id, active: v })} />
               {!h.pinned && (
                 <Button size="icon" variant="ghost" onClick={() => deleteHabit.mutate(h.id)} className="h-8 w-8 text-red-400">🗑</Button>

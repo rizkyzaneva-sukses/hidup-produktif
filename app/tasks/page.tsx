@@ -8,7 +8,7 @@ import { RoleBadge, WorkTypeBadge, PriorityDot } from '@/components/shared/badge
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-interface Task { id: string; title: string; role: string; priority: string; work_type: string; completed: boolean; notes?: string; due_date?: string; project_id?: string; project_name?: string; }
+interface Task { id: string; title: string; role: string; priority: string; work_type: string; completed: boolean; notes?: string; due_date?: string; project_id?: string; project_name?: string; recurring?: string; }
 
 function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Task; onSave: (data: any) => void; onCancel: () => void; customRoles: string[]; projects: any[] }) {
   const allRoles = [...ROLES, ...customRoles];
@@ -20,6 +20,7 @@ function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Ta
     due_date: task?.due_date || '',
     notes: task?.notes || '',
     project_id: task?.project_id || '',
+    recurring: task?.recurring || 'Sekali',
   });
   const submit = () => { if (!form.title.trim()) return; onSave(form); };
   return (
@@ -29,6 +30,7 @@ function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Ta
         <Select options={allRoles.map(r => ({ value: r, label: r }))} value={form.role} onChange={e => setForm(p => ({ ...p, role: e.target.value }))} />
         <Select options={PRIORITIES.map(p => ({ value: p, label: p }))} value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value }))} />
         <Select options={WORK_TYPES.map(w => ({ value: w, label: w }))} value={form.work_type} onChange={e => setForm(p => ({ ...p, work_type: e.target.value }))} />
+        <Select options={[{ value: 'Sekali', label: 'Sekali' }, { value: 'Harian', label: 'Harian' }, { value: 'Mingguan', label: 'Mingguan' }, { value: 'Bulanan', label: 'Bulanan' }]} value={form.recurring} onChange={e => setForm(p => ({ ...p, recurring: e.target.value }))} />
         <div className="relative">
           <Input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} />
           {!form.due_date && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none">📅 Due date</span>}
@@ -56,12 +58,97 @@ type DropdownType = 'role' | 'priority' | 'worktype' | 'project' | null;
 const ITEMS_PER_PAGE = 10;
 const DONE_PREVIEW_COUNT = 3;
 
+// ── Batch Import Component ──
+function BatchImport({ allRoles, onComplete }: { allRoles: string[]; onComplete: () => void }) {
+  const [text, setText] = useState('');
+  const [result, setResult] = useState<{ success: number; errors: number } | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const parseLine = (line: string): { title: string; role: string; priority: string; work_type: string } | null => {
+    let title = line.trim();
+    if (!title) return null;
+    let role = 'CEO';
+    let priority = 'Sedang';
+    let work_type = 'Admin';
+
+    const roleMatch = title.match(/@(\w+)/);
+    if (roleMatch) {
+      const matched = allRoles.find(r => r.toLowerCase() === roleMatch![1].toLowerCase());
+      if (matched) role = matched;
+      title = title.replace(roleMatch[0], '').trim();
+    }
+    const prioMatch = title.match(/#(\w+)/);
+    if (prioMatch) {
+      const matched = PRIORITIES.find(p => p.toLowerCase() === prioMatch![1].toLowerCase());
+      if (matched) priority = matched;
+      title = title.replace(prioMatch[0], '').trim();
+    }
+    const wtMatch = title.match(/\$(\w+)/);
+    if (wtMatch) {
+      const matched = WORK_TYPES.find(w => w.toLowerCase().replace(/\s/g, '') === wtMatch![1].toLowerCase());
+      if (matched) work_type = matched;
+      title = title.replace(wtMatch[0], '').trim();
+    }
+
+    if (!title) return null;
+    return { title, role, priority, work_type };
+  };
+
+  const handleImport = async () => {
+    setImporting(true);
+    const lines = text.split('\n').filter(l => l.trim());
+    let success = 0;
+    let errors = 0;
+
+    for (const line of lines) {
+      const parsed = parseLine(line);
+      if (!parsed) { errors++; continue; }
+      try {
+        const res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...parsed, completed: false }),
+        });
+        if (res.ok) success++;
+        else errors++;
+      } catch { errors++; }
+    }
+
+    setResult({ success, errors });
+    setImporting(false);
+    setText('');
+    onComplete();
+  };
+
+  return (
+    <Card>
+      <CardContent>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-slate-400 font-medium">📋 Batch Import</p>
+          {result && (
+            <p className="text-xs text-green-400">✅ {result.success} ditambah{result.errors > 0 ? ` · ❌ ${result.errors} gagal` : ''}</p>
+          )}
+        </div>
+        <textarea
+          value={text} onChange={e => { setText(e.target.value); setResult(null); }} rows={4}
+          placeholder={"Satu task per baris, contoh:\n@ceo #tinggi $deepwork Siapkan proposal Q3\n@ayah Olahraga pagi bersama anak"}
+          className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none mb-2"
+        />
+        <Button size="sm" onClick={handleImport} disabled={!text.trim() || importing}>
+          {importing ? '⏳ Import...' : `📥 Import ${text.split('\n').filter(l => l.trim()).length} task`}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function TasksPage() {
   const qc = useQueryClient();
   const [filterRole, setFilterRole] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [filterWorkType, setFilterWorkType] = useState('');
   const [filterProject, setFilterProject] = useState('');
+  const [filterRecurring, setFilterRecurring] = useState('');
   const [view, setView] = useState<'list' | 'kanban'>('list');
   const [showForm, setShowForm] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
@@ -99,12 +186,16 @@ export default function TasksPage() {
     if (filterPriority && t.priority !== filterPriority) return false;
     if (filterWorkType && t.work_type !== filterWorkType) return false;
     if (filterProject && t.project_id !== filterProject) return false;
+    if (filterRecurring) {
+      if (filterRecurring === 'Ya' && (!t.recurring || t.recurring === 'Sekali')) return false;
+      if (filterRecurring === 'Tidak' && t.recurring && t.recurring !== 'Sekali') return false;
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!t.title.toLowerCase().includes(q) && !(t.notes || '').toLowerCase().includes(q)) return false;
     }
     return true;
-  }), [tasks, filterRole, filterPriority, filterWorkType, filterProject, searchQuery]);
+  }), [tasks, filterRole, filterPriority, filterWorkType, filterProject, filterRecurring, searchQuery]);
 
   const active = filtered.filter((t: any) => !t.completed);
   const done = filtered.filter((t: any) => t.completed);
@@ -249,7 +340,7 @@ export default function TasksPage() {
     return '';
   };
 
-  const hasActiveFilters = filterRole || filterPriority || filterWorkType || filterProject || searchQuery;
+  const hasActiveFilters = filterRole || filterPriority || filterWorkType || filterProject || filterRecurring || searchQuery;
 
   const TaskRow = ({ task }: { task: Task }) => (
     <div className={`flex items-start gap-3 p-3 sm:p-4 rounded-xl border transition-all ${
@@ -274,6 +365,9 @@ export default function TasksPage() {
           )}
         </div>
         {task.notes && <p className="text-[10px] sm:text-xs text-slate-500 mt-1 truncate">{task.notes}</p>}
+        {task.recurring && task.recurring !== 'Sekali' && (
+          <p className="text-[10px] text-blue-400 mt-1">🔁 {task.recurring}</p>
+        )}
       </div>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 sm:transition-opacity flex-shrink-0">
         <Button size="icon" variant="ghost" onClick={() => setEditTask(task)} className="h-7 w-7 sm:h-8 sm:w-8">✏️</Button>
@@ -375,13 +469,21 @@ export default function TasksPage() {
             <option value="">Semua Project</option>
             {projects.map((p: any) => <option key={p.id} value={p.id}>📁 {p.name}</option>)}
           </select>
+          <select value={filterRecurring} onChange={e => { setFilterRecurring(e.target.value); resetPages(); }} className="h-8 sm:h-9 px-2 sm:px-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-colors">
+            <option value="">Semua Perulangan</option>
+            <option value="Ya">🔁 Berkala</option>
+            <option value="Tidak">Sekali</option>
+          </select>
           {hasActiveFilters && (
-            <button onClick={() => { setFilterRole(''); setFilterPriority(''); setFilterWorkType(''); setFilterProject(''); setSearchQuery(''); resetPages(); }} className="h-8 sm:h-9 px-3 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition-colors">
+            <button onClick={() => { setFilterRole(''); setFilterPriority(''); setFilterWorkType(''); setFilterProject(''); setFilterRecurring(''); setSearchQuery(''); resetPages(); }} className="h-8 sm:h-9 px-3 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition-colors">
               ✕ Reset
             </button>
           )}
         </div>
       </div>
+
+      {/* Batch Import */}
+      <BatchImport allRoles={allRoles} onComplete={() => qc.invalidateQueries({ queryKey: ['tasks'] })} />
 
       {/* List view */}
       {view === 'list' && (

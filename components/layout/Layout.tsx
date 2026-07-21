@@ -12,12 +12,14 @@ const NAV_MAIN = [
   { href: '/tasks', icon: '✅', label: 'Tasks' },
   { href: '/habits', icon: '🌟', label: 'Habits' },
   { href: '/focus', icon: '⏱', label: 'Focus' },
+  { href: '/goals', icon: '🎯', label: 'Goals' },
 ];
 
 const NAV_KELOLA = [
   { href: '/ideas', icon: '💡', label: 'Ide' },
   { href: '/projects', icon: '🗂', label: 'Proyek' },
   { href: '/learning', icon: '📚', label: 'Log Belajar' },
+  { href: '/mood', icon: '😊', label: 'Mood' },
   { href: '/reminders', icon: '🔔', label: 'Reminders' },
   { href: '/subscriptions', icon: '💳', label: 'Subscriptions' },
   { href: '/laporan', icon: '📊', label: 'Laporan' },
@@ -70,7 +72,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const NAV_MAP: Record<string, string> = {
       'nav-home': '/', 'nav-sprint': '/sprint', 'nav-tasks': '/tasks',
-      'nav-habits': '/habits', 'nav-focus': '/focus', 'nav-ideas': '/ideas',
+      'nav-habits': '/habits', 'nav-focus': '/focus', 'nav-goals': '/goals',
+      'nav-mood': '/mood', 'nav-ideas': '/ideas',
       'nav-projects': '/projects', 'nav-learning': '/learning',
     };
     const handler = (e: KeyboardEvent) => {
