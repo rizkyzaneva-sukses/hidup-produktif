@@ -106,7 +106,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const Sidebar = () => (
     <aside className={cn(
       'flex flex-col h-full bg-slate-950 border-r border-slate-800/80 transition-all duration-200',
-      collapsed ? 'w-[56px]' : 'w-[240px]',
+      collapsed ? 'w-[48px]' : 'w-[200px]',
     )}>
       {/* Logo */}
       <div className={cn(
@@ -165,7 +165,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Link key={item.href} href={item.href}
                 className={cn(
                   'flex items-center justify-center rounded-lg transition-colors',
-                  collapsed ? 'w-9 h-9' : 'h-8 flex-1',
+                  collapsed ? 'w-8 h-8' : 'h-8 flex-1',
                   active ? 'text-blue-400 bg-blue-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/60',
                 )}
                 title={item.label}
