@@ -15,23 +15,26 @@ export default function QuranPage() {
   const [keHalaman, setKeHalaman] = useState('');
   const [catatan, setCatatan] = useState('');
 
-  const { data: todayLogs = [] } = useQuery({
+  const { data: todayLogsRaw = [] } = useQuery({
     queryKey: ['quran-logs', 'today', today],
     queryFn: () => fetcher(`/api/quran-logs?date=${today}`),
   });
 
-  const { data: allLogs = [] } = useQuery({
+  const { data: allLogsRaw = [] } = useQuery({
     queryKey: ['quran-logs', 'all'],
     queryFn: () => fetcher(`/api/quran-logs?limit=50`),
   });
 
-  const todayPages = (todayLogs as any[]).reduce((sum: number, l: any) => sum + (l.ke_halaman - l.dari_halaman), 0);
-  const todayLogCount = (todayLogs as any[]).length;
+  const todayLogs: any[] = Array.isArray(todayLogsRaw) ? todayLogsRaw : [];
+  const allLogs: any[] = Array.isArray(allLogsRaw) ? allLogsRaw : [];
 
-  const lastLog = (allLogs as any[]).length > 0 ? (allLogs as any[])[0] : null;
+  const todayPages = todayLogs.reduce((sum, l) => sum + (l.ke_halaman - l.dari_halaman), 0);
+  const todayLogCount = todayLogs.length;
+
+  const lastLog = allLogs.length > 0 ? allLogs[0] : null;
 
   function openAdd() {
-    const latest = (allLogs as any[]).find((l: any) => true);
+    const latest = allLogs.find((l: any) => true);
     if (latest) {
       setDariHalaman(String(latest.ke_halaman));
     } else {
@@ -67,7 +70,7 @@ export default function QuranPage() {
 
   const halamanDibaca = dariHalaman && keHalaman ? Number(keHalaman) - Number(dariHalaman) : 0;
 
-  const groupedByDate = (allLogs as any[]).reduce((acc: Record<string, any[]>, log: any) => {
+  const groupedByDate = allLogs.reduce((acc: Record<string, any[]>, log: any) => {
     if (!acc[log.date]) acc[log.date] = [];
     acc[log.date].push(log);
     return acc;
@@ -83,7 +86,7 @@ export default function QuranPage() {
           </h1>
           <p className="text-slate-500 text-sm">
             {todayLogCount > 0
-              ? `${todayLogCount} sesi · ${todayPages} halaman hari ini · terakhir hal. ${(todayLogs as any[])[0]?.ke_halaman || '-'}`
+              ? `${todayLogCount} sesi · ${todayPages} halaman hari ini · terakhir hal. ${todayLogs[0]?.ke_halaman || '-'}`
               : 'Belum ada bacaan hari ini'}
           </p>
         </div>
@@ -100,7 +103,7 @@ export default function QuranPage() {
               Hari Ini — {todayPages} hlm
             </h3>
             <div className="space-y-2">
-              {(todayLogs as any[]).map((log: any) => {
+              {todayLogs.map((log: any) => {
                 const pages = log.ke_halaman - log.dari_halaman;
                 return (
                   <div key={log.id} className="flex items-center gap-3 py-2.5 px-3 rounded-lg bg-slate-800/40 group">

@@ -48,8 +48,9 @@ export default function HomePage() {
   const activeTasks = tasks.filter((t: any) => !t.completed).length;
   const habitsDone = habitLogs.length;
   const mentahIdeas = ideas.filter((i: any) => i.status === 'Mentah').length;
-  const quranPagesToday = (quranLogsToday as any[]).reduce((sum: number, l: any) => sum + ((l.ke_halaman || 0) - (l.dari_halaman || 0)), 0);
-  const quranLastPage = (quranLogsToday as any[]).length > 0 ? (quranLogsToday as any[])[0]?.ke_halaman : null;
+  const quranLogsTodaySafe = Array.isArray(quranLogsToday) ? quranLogsToday : [];
+  const quranPagesToday = quranLogsTodaySafe.reduce((sum: number, l: any) => sum + ((l.ke_halaman || 0) - (l.dari_halaman || 0)), 0);
+  const quranLastPage = quranLogsTodaySafe.length > 0 ? quranLogsTodaySafe[0]?.ke_halaman : null;
 
   const nearRenewalSubs = (subs as any[])
     .filter((s: any) => s.status === 'Aktif' && s.tanggal_renewal)
