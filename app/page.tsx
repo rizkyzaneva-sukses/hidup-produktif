@@ -30,6 +30,7 @@ export default function HomePage() {
   const { data: subs = [] } = useQuery({ queryKey: ['home-subs'], queryFn: () => fetcher('/api/subscriptions') });
   const { data: ideas = [] } = useQuery({ queryKey: ['home-ideas'], queryFn: () => fetcher('/api/ideas') });
   const { data: reminders = [] } = useQuery({ queryKey: ['home-reminders'], queryFn: () => fetcher('/api/reminders') });
+  const { data: quranLogsToday = [] } = useQuery({ queryKey: ['home-quran-today', today], queryFn: () => fetcher(`/api/quran-logs?date=${today}`) });
 
   const toggleTask = useMutation({
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
@@ -47,6 +48,7 @@ export default function HomePage() {
   const activeTasks = tasks.filter((t: any) => !t.completed).length;
   const habitsDone = habitLogs.length;
   const mentahIdeas = ideas.filter((i: any) => i.status === 'Mentah').length;
+  const quranPagesToday = (quranLogsToday as any[]).reduce((sum: number, l: any) => sum + (l.halaman || 0), 0);
 
   const nearRenewalSubs = (subs as any[])
     .filter((s: any) => s.status === 'Aktif' && s.tanggal_renewal)
@@ -281,7 +283,47 @@ export default function HomePage() {
                       'bg-blue-500'
                     } />
                   </CardContent>
-                </Card>
+      </Card>
+
+      {/* Quran today widget */}
+      <Link href="/quran">
+        <Card className="hover:border-emerald-700/50 transition-colors cursor-pointer">
+          <CardContent className="py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">Baca Quran</p>
+                  <p className="text-xs text-slate-500">
+                    {quranLogsToday.length > 0
+                      ? `${quranLogsToday.length} bacaan · ${quranPagesToday} hlm`
+                      : 'Belum baca hari ini'}
+                  </p>
+                </div>
+              </div>
+              {quranLogsToday.length > 0 && (
+                <span className="text-xs text-emerald-400 font-medium">{quranPagesToday} hlm</span>
+              )}
+            </div>
+            {quranLogsToday.length > 0 && (
+              <div className="mt-2.5 space-y-1">
+                {(quranLogsToday as any[]).slice(0, 2).map((l: any) => (
+                  <div key={l.id} className="flex items-center gap-2 text-xs">
+                    <span className="text-emerald-400 font-medium">{l.surah}</span>
+                    <span className="text-slate-600">ayat {l.ayat}</span>
+                    <span className="text-slate-600 ml-auto">hal. {l.halaman}</span>
+                  </div>
+                ))}
+                {quranLogsToday.length > 2 && (
+                  <p className="text-xs text-slate-600">+{quranLogsToday.length - 2} bacaan lainnya</p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </Link>
               </Link>
             );
           })}

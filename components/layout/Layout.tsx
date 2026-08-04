@@ -20,6 +20,7 @@ const NAV_MAIN = [
   { href: '/tasks', icon: ListTodo, label: 'Tasks' },
   { href: '/habits', icon: Flame, label: 'Habits' },
   { href: '/focus', icon: Timer, label: 'Focus' },
+  { href: '/quran', icon: BookOpen, label: 'Quran' },
 ];
 
 const NAV_QUICK = [
@@ -83,7 +84,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       'nav-home': '/', 'nav-sprint': '/sprint', 'nav-tasks': '/tasks',
       'nav-habits': '/habits', 'nav-focus': '/focus', 'nav-goals': '/goals',
       'nav-mood': '/mood', 'nav-ideas': '/ideas',
-      'nav-projects': '/projects', 'nav-learning': '/learning',
+      'nav-projects': '/projects', 'nav-learning': '/learning', 'nav-quran': '/quran',
     };
     const handler = (e: KeyboardEvent) => {
       if (matchesKeyCombo(e, getEffectiveKey('search'))) {

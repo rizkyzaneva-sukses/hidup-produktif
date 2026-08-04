@@ -296,3 +296,16 @@ model User {
 
   @@map("users")
 }
+
+model QuranLog {
+  id         String   @id @default(cuid())
+  date       String
+  surah      String
+  ayat       String
+  halaman    Int
+  ayatDibaca String?  @map("ayat_dibaca")
+  catatan    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("quran_logs")
+}
