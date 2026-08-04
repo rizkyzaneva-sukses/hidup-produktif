@@ -25,19 +25,24 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { date, surah, ayat, halaman, ayat_dibaca, catatan } = body;
+    const { date, dari_halaman, ke_halaman, catatan } = body;
 
-    if (!date || !surah || !ayat || !halaman) {
-      return NextResponse.json({ error: 'date, surah, ayat, halaman wajib diisi' }, { status: 400 });
+    if (!date || !dari_halaman || !ke_halaman) {
+      return NextResponse.json({ error: 'date, dari_halaman, ke_halaman wajib diisi' }, { status: 400 });
+    }
+
+    const dari = Number(dari_halaman);
+    const ke = Number(ke_halaman);
+
+    if (ke <= dari) {
+      return NextResponse.json({ error: 'ke_halaman harus lebih besar dari dari_halaman' }, { status: 400 });
     }
 
     const log = await prisma.quranLog.create({
       data: {
         date,
-        surah,
-        ayat,
-        halaman: Number(halaman),
-        ayatDibaca: ayat_dibaca || null,
+        dariHalaman: dari,
+        keHalaman: ke,
         catatan: catatan || null,
       },
     });

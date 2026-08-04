@@ -48,7 +48,8 @@ export default function HomePage() {
   const activeTasks = tasks.filter((t: any) => !t.completed).length;
   const habitsDone = habitLogs.length;
   const mentahIdeas = ideas.filter((i: any) => i.status === 'Mentah').length;
-  const quranPagesToday = (quranLogsToday as any[]).reduce((sum: number, l: any) => sum + (l.halaman || 0), 0);
+  const quranPagesToday = (quranLogsToday as any[]).reduce((sum: number, l: any) => sum + ((l.ke_halaman || 0) - (l.dari_halaman || 0)), 0);
+  const quranLastPage = (quranLogsToday as any[]).length > 0 ? (quranLogsToday as any[])[0]?.ke_halaman : null;
 
   const nearRenewalSubs = (subs as any[])
     .filter((s: any) => s.status === 'Aktif' && s.tanggal_renewal)
@@ -93,7 +94,7 @@ export default function HomePage() {
         <div className="flex items-center gap-2 shrink-0">
           <Link href="/quran" className="shrink-0 flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            {quranPagesToday > 0 ? `${quranPagesToday} hlm` : 'Quran'}
+            {quranPagesToday > 0 ? `${quranPagesToday} hlm | ${quranLastPage}` : 'Quran'}
           </Link>
           <Link href="/sprint" className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
             Sprint
