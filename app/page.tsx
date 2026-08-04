@@ -90,9 +90,15 @@ export default function HomePage() {
           <p className="text-slate-500 text-sm">{format(now, 'EEEE, d MMMM yyyy', { locale: id })}</p>
           <h1 className="text-xl font-semibold text-white mt-0.5">{greeting}</h1>
         </div>
-        <Link href="/sprint" className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-          Sprint
-        </Link>
+        <div className="flex items-center gap-2 shrink-0">
+          <Link href="/quran" className="shrink-0 flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            {quranPagesToday > 0 ? `${quranPagesToday} hlm` : 'Quran'}
+          </Link>
+          <Link href="/sprint" className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+            Sprint
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -283,47 +289,7 @@ export default function HomePage() {
                       'bg-blue-500'
                     } />
                   </CardContent>
-      </Card>
-
-      {/* Quran today widget */}
-      <Link href="/quran">
-        <Card className="hover:border-emerald-700/50 transition-colors cursor-pointer">
-          <CardContent className="py-3 sm:py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-emerald-400"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">Baca Quran</p>
-                  <p className="text-xs text-slate-500">
-                    {quranLogsToday.length > 0
-                      ? `${quranLogsToday.length} bacaan · ${quranPagesToday} hlm`
-                      : 'Belum baca hari ini'}
-                  </p>
-                </div>
-              </div>
-              {quranLogsToday.length > 0 && (
-                <span className="text-xs text-emerald-400 font-medium">{quranPagesToday} hlm</span>
-              )}
-            </div>
-            {quranLogsToday.length > 0 && (
-              <div className="mt-2.5 space-y-1">
-                {(quranLogsToday as any[]).slice(0, 2).map((l: any) => (
-                  <div key={l.id} className="flex items-center gap-2 text-xs">
-                    <span className="text-emerald-400 font-medium">{l.surah}</span>
-                    <span className="text-slate-600">ayat {l.ayat}</span>
-                    <span className="text-slate-600 ml-auto">hal. {l.halaman}</span>
-                  </div>
-                ))}
-                {quranLogsToday.length > 2 && (
-                  <p className="text-xs text-slate-600">+{quranLogsToday.length - 2} bacaan lainnya</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </Link>
+                </Card>
               </Link>
             );
           })}
