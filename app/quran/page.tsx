@@ -5,7 +5,26 @@ import { todayStr } from '@/lib/utils';
 import { Card, CardContent, Button, Input, Dialog } from '@/components/ui';
 import { BookOpen, Plus, Trash2, BookMarked, ArrowRight } from 'lucide-react';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = async (url: string) => {
+  const r = await fetch(url);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data?.error || 'Gagal memuat data');
+  return data;
+};
+
+function pagesOf(log: any) {
+  const dari = Number(log.dari_halaman ?? log.dariHalaman ?? 0);
+  const ke = Number(log.ke_halaman ?? log.keHalaman ?? 0);
+  return Math.max(0, ke - dari);
+}
+
+function dariOf(log: any) {
+  return Number(log.dari_halaman ?? log.dariHalaman ?? 0);
+}
+
+function keOf(log: any) {
+  return Number(log.ke_halaman ?? log.keHalaman ?? 0);
+}
 
 export default function QuranPage() {
   const today = todayStr();
@@ -14,13 +33,14 @@ export default function QuranPage() {
   const [dariHalaman, setDariHalaman] = useState('');
   const [keHalaman, setKeHalaman] = useState('');
   const [catatan, setCatatan] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const { data: todayLogsRaw = [] } = useQuery({
+  const { data: todayLogsRaw = [], isLoading: loadingToday } = useQuery({
     queryKey: ['quran-logs', 'today', today],
     queryFn: () => fetcher(`/api/quran-logs?date=${today}`),
   });
 
-  const { data: allLogsRaw = [] } = useQuery({
+  const { data: allLogsRaw = [], isLoading: loadingAll } = useQuery({
     queryKey: ['quran-logs', 'all'],
     queryFn: () => fetcher(`/api/quran-logs?limit=50`),
   });
@@ -28,26 +48,22 @@ export default function QuranPage() {
   const todayLogs: any[] = Array.isArray(todayLogsRaw) ? todayLogsRaw : [];
   const allLogs: any[] = Array.isArray(allLogsRaw) ? allLogsRaw : [];
 
-  const todayPages = todayLogs.reduce((sum, l) => sum + (l.ke_halaman - l.dari_halaman), 0);
+  const todayPages = todayLogs.reduce((sum, l) => sum + pagesOf(l), 0);
   const todayLogCount = todayLogs.length;
-
   const lastLog = allLogs.length > 0 ? allLogs[0] : null;
+  const bookmark = lastLog ? keOf(lastLog) : null;
 
   function openAdd() {
-    const latest = allLogs.find((l: any) => true);
-    if (latest) {
-      setDariHalaman(String(latest.ke_halaman));
-    } else {
-      setDariHalaman('');
-    }
+    setDariHalaman(bookmark ? String(bookmark) : '');
     setKeHalaman('');
     setCatatan('');
+    setErrorMsg('');
     setShowAdd(true);
   }
 
   const addLog = useMutation({
-    mutationFn: () =>
-      fetch('/api/quran-logs', {
+    mutationFn: async () => {
+      const res = await fetch('/api/quran-logs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -56,15 +72,26 @@ export default function QuranPage() {
           ke_halaman: Number(keHalaman),
           catatan: catatan || null,
         }),
-      }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Gagal menyimpan');
+      return data;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quran-logs'] });
       setShowAdd(false);
+      setErrorMsg('');
     },
+    onError: (err: any) => setErrorMsg(err?.message || 'Gagal menyimpan'),
   });
 
   const deleteLog = useMutation({
-    mutationFn: (id: string) => fetch(`/api/quran-logs/${id}`, { method: 'DELETE' }),
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/quran-logs/${id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || 'Gagal menghapus');
+      return data;
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['quran-logs'] }),
   });
 
@@ -85,9 +112,13 @@ export default function QuranPage() {
             Baca Quran
           </h1>
           <p className="text-slate-500 text-sm">
-            {todayLogCount > 0
-              ? `${todayLogCount} sesi · ${todayPages} halaman hari ini · terakhir hal. ${todayLogs[0]?.ke_halaman || '-'}`
-              : 'Belum ada bacaan hari ini'}
+            {loadingToday || loadingAll
+              ? 'Memuat...'
+              : todayLogCount > 0
+                ? `${todayLogCount} sesi · ${todayPages} halaman hari ini · lanjut hal. ${keOf(todayLogs[0])}`
+                : bookmark
+                  ? `Belum baca hari ini · lanjut dari hal. ${bookmark}`
+                  : 'Belum ada bacaan'}
           </p>
         </div>
         <Button size="sm" onClick={openAdd}>
@@ -104,14 +135,14 @@ export default function QuranPage() {
             </h3>
             <div className="space-y-2">
               {todayLogs.map((log: any) => {
-                const pages = log.ke_halaman - log.dari_halaman;
+                const pages = pagesOf(log);
                 return (
                   <div key={log.id} className="flex items-center gap-3 py-2.5 px-3 rounded-lg bg-slate-800/40 group">
                     <BookMarked size={16} className="text-emerald-400 shrink-0" />
                     <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <span className="text-sm text-white font-medium tabular-nums">{log.dari_halaman}</span>
+                      <span className="text-sm text-white font-medium tabular-nums">{dariOf(log)}</span>
                       <ArrowRight size={12} className="text-slate-600 shrink-0" />
-                      <span className="text-sm text-white font-medium tabular-nums">{log.ke_halaman}</span>
+                      <span className="text-sm text-white font-medium tabular-nums">{keOf(log)}</span>
                       <span className="text-xs text-emerald-400 font-medium ml-1">({pages} hlm)</span>
                     </div>
                     {log.catatan && (
@@ -131,7 +162,7 @@ export default function QuranPage() {
         </Card>
       )}
 
-      {todayLogs.length === 0 && (
+      {todayLogs.length === 0 && !loadingToday && (
         <Card className="border-dashed border-slate-700">
           <CardContent className="py-12 text-center">
             <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
@@ -139,8 +170,8 @@ export default function QuranPage() {
             </div>
             <p className="text-white font-medium mb-1">Mulai baca Quran hari ini</p>
             <p className="text-slate-500 text-sm mb-5">
-              {lastLog
-                ? `Lanjutkan dari halaman ${lastLog.ke_halaman}`
+              {bookmark
+                ? `Lanjutkan dari halaman ${bookmark}`
                 : 'Catat dari halaman berapa ke berapa'}
             </p>
             <Button onClick={openAdd}>
@@ -156,7 +187,7 @@ export default function QuranPage() {
             <h3 className="text-sm font-semibold text-white mb-3">Riwayat</h3>
             <div className="space-y-3">
               {Object.entries(groupedByDate).map(([date, logs]) => {
-                const totalPages = logs.reduce((sum, l) => sum + (l.ke_halaman - l.dari_halaman), 0);
+                const totalPages = logs.reduce((sum, l) => sum + pagesOf(l), 0);
                 const isToday = date === today;
                 return (
                   <div key={date}>
@@ -169,8 +200,8 @@ export default function QuranPage() {
                     <div className="space-y-1">
                       {logs.map((log: any) => (
                         <div key={log.id} className="flex items-center gap-2 py-1.5 px-2.5 rounded text-xs bg-slate-800/20">
-                          <span className="text-slate-400 tabular-nums">{log.dari_halaman} → {log.ke_halaman}</span>
-                          <span className="text-emerald-400">({log.ke_halaman - log.dari_halaman} hlm)</span>
+                          <span className="text-slate-400 tabular-nums">{dariOf(log)} → {keOf(log)}</span>
+                          <span className="text-emerald-400">({pagesOf(log)} hlm)</span>
                           {log.catatan && <span className="text-slate-600 ml-auto truncate max-w-[100px]">{log.catatan}</span>}
                         </div>
                       ))}
@@ -191,7 +222,7 @@ export default function QuranPage() {
               <Input
                 type="number"
                 min={1}
-                max={604}
+                max={603}
                 value={dariHalaman}
                 onChange={e => setDariHalaman(e.target.value)}
                 placeholder="332"
@@ -201,7 +232,7 @@ export default function QuranPage() {
               <label className="block text-xs text-slate-400 font-medium mb-1.5">Sampai Halaman</label>
               <Input
                 type="number"
-                min={1}
+                min={2}
                 max={604}
                 value={keHalaman}
                 onChange={e => setKeHalaman(e.target.value)}
@@ -216,10 +247,14 @@ export default function QuranPage() {
               <div>
                 <p className="text-sm text-emerald-300 font-medium">{halamanDibaca} halaman dibaca</p>
                 <p className="text-xs text-slate-500">
-                  Dari hal. {dariHalaman} sampai sebelum hal. {keHalaman}
+                  Hal. {dariHalaman} → {keHalaman} · lanjut besok dari {keHalaman}
                 </p>
               </div>
             </div>
+          )}
+
+          {errorMsg && (
+            <p className="text-xs text-red-400 bg-red-500/10 px-3 py-2 rounded-lg">{errorMsg}</p>
           )}
 
           <div>
