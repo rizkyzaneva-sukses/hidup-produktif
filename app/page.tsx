@@ -6,6 +6,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { QUOTES, SHOLAT_TIMES, ROLE_CONFIG, ROLES } from '@/lib/constants';
 import { todayStr, getGreeting, getDailyQuote } from '@/lib/utils';
+import { getSurahByHalaman } from '@/lib/quran-data';
 import { Card, CardContent, ProgressBar, Badge } from '@/components/ui';
 import { EODModal } from '@/components/sprint/EODModal';
 
@@ -31,6 +32,7 @@ export default function HomePage() {
   const { data: ideas = [] } = useQuery({ queryKey: ['home-ideas'], queryFn: () => fetcher('/api/ideas') });
   const { data: reminders = [] } = useQuery({ queryKey: ['home-reminders'], queryFn: () => fetcher('/api/reminders') });
   const { data: quranLogsToday = [] } = useQuery({ queryKey: ['home-quran-today', today], queryFn: () => fetcher(`/api/quran-logs?date=${today}`) });
+  const { data: quranLatestRaw = [] } = useQuery({ queryKey: ['home-quran-latest'], queryFn: () => fetcher('/api/quran-logs?limit=1') });
 
   const toggleTask = useMutation({
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
@@ -49,14 +51,18 @@ export default function HomePage() {
   const habitsDone = habitLogs.length;
   const mentahIdeas = ideas.filter((i: any) => i.status === 'Mentah').length;
   const quranLogsTodaySafe = Array.isArray(quranLogsToday) ? quranLogsToday : [];
+  const quranLatestSafe = Array.isArray(quranLatestRaw) ? quranLatestRaw : [];
   const quranPagesToday = quranLogsTodaySafe.reduce((sum: number, l: any) => {
     const dari = Number(l.dari_halaman ?? l.dariHalaman ?? 0);
     const ke = Number(l.ke_halaman ?? l.keHalaman ?? 0);
     return sum + Math.max(0, ke - dari);
   }, 0);
-  const quranLastPage = quranLogsTodaySafe.length > 0
-    ? Number(quranLogsTodaySafe[0]?.ke_halaman ?? quranLogsTodaySafe[0]?.keHalaman ?? 0) || null
-    : null;
+  const quranLastPage = (() => {
+    const latest = quranLatestSafe[0] || quranLogsTodaySafe[0];
+    if (!latest) return null;
+    return Number(latest.ke_halaman ?? latest.keHalaman ?? 0) || null;
+  })();
+  const quranLastSurah = quranLastPage ? getSurahByHalaman(quranLastPage) : null;
 
   const nearRenewalSubs = (subs as any[])
     .filter((s: any) => s.status === 'Aktif' && s.tanggal_renewal)
@@ -99,9 +105,21 @@ export default function HomePage() {
           <h1 className="text-xl font-semibold text-white mt-0.5">{greeting}</h1>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Link href="/quran" className="shrink-0 flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            {quranPagesToday > 0 ? `${quranPagesToday} hlm | ${quranLastPage}` : 'Quran'}
+          <Link href="/quran" className="shrink-0 flex flex-col items-end gap-0.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-lg transition-colors min-w-[4.5rem]">
+            {quranLastPage ? (
+              <>
+                <span className="text-sm font-bold tabular-nums leading-none">Hal. {quranLastPage}</span>
+                <span className="text-[10px] text-emerald-400/80 font-medium leading-none max-w-[7rem] truncate">
+                  {quranLastSurah?.nama || 'Quran'}
+                  {quranPagesToday > 0 ? ` · ${quranPagesToday}h` : ''}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs font-medium flex items-center gap-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                Quran
+              </span>
+            )}
           </Link>
           <Link href="/sprint" className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
             Sprint

@@ -150,3 +150,14 @@ export function searchSurah(query: string): SurahInfo[] {
     String(s.nomor) === q
   );
 }
+
+/** Surah di halaman tertentu (Mushaf Madinah 604 hlm) */
+export function getSurahByHalaman(halaman: number): SurahInfo | null {
+  if (!Number.isFinite(halaman) || halaman < 1 || halaman > 604) return null;
+  let found: SurahInfo | null = null;
+  for (const s of SURAH_LIST) {
+    if (s.halamanAwal <= halaman) found = s;
+    else break;
+  }
+  return found;
+}
