@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+const TRANSCRIBE_URL = process.env.TRANSCRIBE_URL || 'http://host.docker.internal:7890';
+
 // Reply to a Telegram message
 async function reply(token: string, chatId: number, text: string, replyTo?: number) {
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -39,6 +41,54 @@ async function getAllowedChatIds(): Promise<string[]> {
   }
 }
 
+// Download file from Telegram
+async function downloadTelegramFile(token: string, fileId: string): Promise<Buffer | null> {
+  try {
+    // Get file info
+    const fileRes = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`);
+    const fileData = await fileRes.json() as any;
+    if (!fileData.ok || !fileData.result?.file_path) return null;
+
+    // Download file
+    const url = `https://api.telegram.org/file/bot${token}/${fileData.result.file_path}`;
+    const res = await fetch(url);
+    const arrayBuf = await res.arrayBuffer();
+    return Buffer.from(arrayBuf);
+  } catch {
+    return null;
+  }
+}
+
+// Transcribe audio via local whisper.cpp
+async function transcribeAudio(audioBuffer: Buffer): Promise<string | null> {
+  try {
+    const formData = new FormData();
+    formData.append('file', new Blob([audioBuffer], { type: 'audio/ogg' }), 'voice.ogg');
+
+    const res = await fetch(`${TRANSCRIBE_URL}/transcribe`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json() as any;
+    return data.text || null;
+  } catch {
+    return null;
+  }
+}
+
+// Save idea to database
+async function saveIdea(title: string, description?: string | null) {
+  return prisma.idea.create({
+    data: {
+      title,
+      description: description || null,
+      role: 'Umum',
+      category: 'Telegram',
+      status: 'Mentah',
+    },
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const token = await getToken();
@@ -49,10 +99,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const msg = body.message;
-    if (!msg || !msg.text) return NextResponse.json({ ok: true });
+    if (!msg) return NextResponse.json({ ok: true });
 
     const chatId = String(msg.chat.id);
-    const text: string = msg.text.trim();
     const messageId = msg.message_id;
 
     // Only process from allowed chat IDs
@@ -61,6 +110,40 @@ export async function POST(req: NextRequest) {
       await reply(token, msg.chat.id, '⛔ Anda tidak memiliki akses ke bot ini.', messageId);
       return NextResponse.json({ ok: true });
     }
+
+    // === VOICE MESSAGE ===
+    if (msg.voice) {
+      await reply(token, msg.chat.id, '🎙️ Memproses voice note...', messageId);
+
+      const audioBuffer = await downloadTelegramFile(token, msg.voice.file_id);
+      if (!audioBuffer) {
+        await reply(token, msg.chat.id, '❌ Gagal mengunduh audio.', messageId);
+        return NextResponse.json({ ok: true });
+      }
+
+      const text = await transcribeAudio(audioBuffer);
+      if (!text) {
+        await reply(token, msg.chat.id, '❌ Gagal mentranskripsi audio. Coba ulang.', messageId);
+        return NextResponse.json({ ok: true });
+      }
+
+      const idea = await saveIdea(text);
+      await reply(
+        token,
+        msg.chat.id,
+        `✅ <b>Voice note tersimpan sebagai ide!</b>\n\n` +
+          `🎙️ <i>"${text}"</i>\n\n` +
+          `📂 Kategori: Telegram\n🏷 Status: Mentah\n\n` +
+          `👉 <a href="https://produktifmax.maulanacorp.my.id/ideas">Lihat di Dashboard</a>`,
+        messageId
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // === TEXT MESSAGE ===
+    if (!msg.text) return NextResponse.json({ ok: true });
+
+    const text: string = msg.text.trim();
 
     // Handle /start and /help
     if (text === '/start' || text === '/help') {
@@ -72,7 +155,8 @@ export async function POST(req: NextRequest) {
           `📌 <b>Cara pakai:</b>\n` +
           `• <code>/ide Judul ide</code>\n` +
           `• <code>/ide Judul | Deskripsi</code>\n` +
-          `• Atau ketik langsung — otomatis jadi ide\n\n` +
+          `• Ketik langsung — otomatis jadi ide\n` +
+          `• 🎙️ Voice note — otomatis transkripsi & simpan\n\n` +
           `💡 Ide akan tersimpan di dashboard Anda.`,
         messageId
       );
@@ -98,7 +182,6 @@ export async function POST(req: NextRequest) {
       title = parts[0].trim();
       description = parts[1]?.trim() || null;
     } else {
-      // Plain text → save as idea
       title = text;
     }
 
@@ -107,17 +190,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // Save to database
-    const idea = await prisma.idea.create({
-      data: {
-        title,
-        description,
-        role: 'Umum',
-        category: 'Telegram',
-        status: 'Mentah',
-      },
-    });
-
+    const idea = await saveIdea(title, description);
     const descLine = description ? `\n📝 ${description}` : '';
     await reply(
       token,
