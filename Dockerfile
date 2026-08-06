@@ -68,11 +68,26 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 # Copy entrypoint script
 COPY entrypoint.sh ./entrypoint.sh
 
+# Install whisper.cpp for voice transcription
+RUN apk add --no-cache cmake g++ make git wget \
+    && cd /opt \
+    && git clone --depth 1 https://github.com/ggerganov/whisper.cpp.git \
+    && cd whisper.cpp \
+    && cmake -B build -DGGML_CLBLAST=OFF \
+    && cmake --build build -j$(nproc) --target whisper-cli \
+    && bash models/download-ggml-model.sh small \
+    && apk del cmake g++ make git \
+    && rm -rf /opt/whisper.cpp/build/CMakeFiles /opt/whisper.cpp/examples
+
+# Copy transcription server
+COPY transcribe-server.py /opt/transcribe/server.py
+
 USER nextjs
 
 EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+ENV TRANSCRIBE_URL="http://127.0.0.1:7890"
 
 CMD ["sh", "entrypoint.sh"]

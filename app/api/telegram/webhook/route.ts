@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-const TRANSCRIBE_URL = process.env.TRANSCRIBE_URL || 'http://host.docker.internal:7890';
+const TRANSCRIBE_URL = process.env.TRANSCRIBE_URL || 'http://127.0.0.1:7890';
 
 // Reply to a Telegram message
 async function reply(token: string, chatId: number, text: string, replyTo?: number) {
