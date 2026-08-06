@@ -69,7 +69,7 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY entrypoint.sh ./entrypoint.sh
 
 # Install whisper.cpp for voice transcription
-RUN apk add --no-cache cmake g++ make git wget bash python3 py3-pip libgomp && pip3 install --break-system-packages flask \
+RUN apk add --no-cache cmake g++ make git wget bash python3 py3-pip libgomp ffmpeg && pip3 install --break-system-packages flask \
     && cd /opt \
     && git clone --depth 1 https://github.com/ggerganov/whisper.cpp.git \
     && cd whisper.cpp \
