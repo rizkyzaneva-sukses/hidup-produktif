@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getIronSession } from 'iron-session';
 import { type SessionData, sessionOptions } from '@/lib/session-config';
 
-const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/register'];
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/register", "/api/telegram/webhook"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
