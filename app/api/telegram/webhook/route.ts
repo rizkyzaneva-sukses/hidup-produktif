@@ -63,7 +63,7 @@ async function downloadTelegramFile(token: string, fileId: string): Promise<Buff
 async function transcribeAudio(audioBuffer: Buffer): Promise<string | null> {
   try {
     const formData = new FormData();
-    formData.append('file', new Blob([audioBuffer], { type: 'audio/ogg' }), 'voice.ogg');
+    formData.append('file', new Blob([new Uint8Array(audioBuffer)], { type: 'audio/ogg' }), 'voice.ogg');
 
     const res = await fetch(`${TRANSCRIBE_URL}/transcribe`, {
       method: 'POST',
