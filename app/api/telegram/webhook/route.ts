@@ -44,12 +44,9 @@ async function getAllowedChatIds(): Promise<string[]> {
 // Download file from Telegram
 async function downloadTelegramFile(token: string, fileId: string): Promise<Buffer | null> {
   try {
-    // Get file info
     const fileRes = await fetch(`https://api.telegram.org/bot${token}/getFile?file_id=${fileId}`);
     const fileData = await fileRes.json() as any;
     if (!fileData.ok || !fileData.result?.file_path) return null;
-
-    // Download file
     const url = `https://api.telegram.org/file/bot${token}/${fileData.result.file_path}`;
     const res = await fetch(url);
     const arrayBuf = await res.arrayBuffer();
@@ -64,11 +61,7 @@ async function transcribeAudio(audioBuffer: Buffer): Promise<string | null> {
   try {
     const formData = new FormData();
     formData.append('file', new Blob([new Uint8Array(audioBuffer)], { type: 'audio/ogg' }), 'voice.ogg');
-
-    const res = await fetch(`${TRANSCRIBE_URL}/transcribe`, {
-      method: 'POST',
-      body: formData,
-    });
+    const res = await fetch(`${TRANSCRIBE_URL}/transcribe`, { method: 'POST', body: formData });
     const data = await res.json() as any;
     return data.text || null;
   } catch {
@@ -76,7 +69,8 @@ async function transcribeAudio(audioBuffer: Buffer): Promise<string | null> {
   }
 }
 
-// Save idea to database
+// === SAVE FUNCTIONS ===
+
 async function saveIdea(title: string, description?: string | null) {
   return prisma.idea.create({
     data: {
@@ -88,6 +82,41 @@ async function saveIdea(title: string, description?: string | null) {
     },
   });
 }
+
+async function saveTask(title: string, notes?: string | null) {
+  return prisma.task.create({
+    data: {
+      title,
+      notes: notes || null,
+      role: 'CEO',
+      priority: 'Sedang',
+      workType: 'Admin',
+    },
+  });
+}
+
+async function saveProject(name: string, description?: string | null) {
+  return prisma.project.create({
+    data: {
+      name,
+      description: description || null,
+      role: 'CEO',
+      status: 'Aktif',
+    },
+  });
+}
+
+async function saveHabit(label: string) {
+  return prisma.habit.create({
+    data: {
+      label,
+      emoji: '✨',
+      active: true,
+    },
+  });
+}
+
+// === MAIN HANDLER ===
 
 export async function POST(req: NextRequest) {
   try {
@@ -111,7 +140,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // === VOICE MESSAGE ===
+    // === VOICE MESSAGE === (always saved as ide)
     if (msg.voice) {
       await reply(token, msg.chat.id, '🎙️ Memproses voice note...', messageId);
 
@@ -144,60 +173,143 @@ export async function POST(req: NextRequest) {
     if (!msg.text) return NextResponse.json({ ok: true });
 
     const text: string = msg.text.trim();
+    const lower = text.toLowerCase();
 
-    // Handle /start and /help
-    if (text === '/start' || text === '/help') {
+    // --- /start & /help ---
+    if (lower === '/start' || lower === '/help') {
       await reply(
         token,
         msg.chat.id,
         `🕌 <b>Hidup Produktif Berkah</b>\n\n` +
-          `Kirim ide kapan saja!\n\n` +
-          `📌 <b>Cara pakai:</b>\n` +
-          `• <code>/ide Judul ide</code>\n` +
-          `• <code>/ide Judul | Deskripsi</code>\n` +
-          `• Ketik langsung — otomatis jadi ide\n` +
-          `• 🎙️ Voice note — otomatis transkripsi & simpan\n\n` +
-          `💡 Ide akan tersimpan di dashboard Anda.`,
+          `📌 <b>Commands:</b>\n` +
+          `• <code>/task Judul</code> — tambah task\n` +
+          `• <code>/task Judul | Catatan</code> — task + catatan\n` +
+          `• <code>/project Judul</code> — tambah project\n` +
+          `• <code>/project Judul | Deskripsi</code> — project + deskripsi\n` +
+          `• <code>/habit Judul</code> — tambah habit\n` +
+          `• <code>/ide Judul</code> — tambah ide\n` +
+          `• <code>/ide Judul | Deskripsi</code> — ide + deskripsi\n\n` +
+          `💡 Ketik langsung tanpa / → otomatis jadi ide\n` +
+          `🎙️ Voice note → transkripsi & simpan sebagai ide`,
         messageId
       );
       return NextResponse.json({ ok: true });
     }
 
-    // Parse: /ide Title | Description  OR  /ide Title  OR  plain text
-    let title: string;
-    let description: string | null = null;
-
-    if (text.toLowerCase().startsWith('/ide')) {
-      const payload = text.slice(4).trim();
+    // --- /task Judul | Notes ---
+    if (lower.startsWith('/task')) {
+      const payload = text.slice(5).trim();
       if (!payload) {
-        await reply(
-          token,
-          msg.chat.id,
-          `⚠️ Format: <code>/ide Judul ide</code> atau <code>/ide Judul | Deskripsi</code>`,
-          messageId
-        );
+        await reply(token, msg.chat.id, `⚠️ Format: <code>/task Judul</code> atau <code>/task Judul | Catatan</code>`, messageId);
         return NextResponse.json({ ok: true });
       }
       const parts = payload.split('|');
-      title = parts[0].trim();
-      description = parts[1]?.trim() || null;
-    } else {
-      title = text;
-    }
-
-    if (!title) {
-      await reply(token, msg.chat.id, '⚠️ Judul ide tidak boleh kosong.', messageId);
+      const title = parts[0].trim();
+      const notes = parts[1]?.trim() || null;
+      if (!title) {
+        await reply(token, msg.chat.id, '⚠️ Judul task tidak boleh kosong.', messageId);
+        return NextResponse.json({ ok: true });
+      }
+      const task = await saveTask(title, notes);
+      const notesLine = notes ? `\n📝 ${notes}` : '';
+      await reply(
+        token,
+        msg.chat.id,
+        `✅ <b>Task tersimpan!</b>\n\n` +
+          `📋 ${task.title}` +
+          notesLine +
+          `\n\n🏷 Priority: ${task.priority}\n📂 Work Type: ${task.workType}\n\n` +
+          `👉 <a href="https://produktifmax.maulanacorp.my.id/tasks">Lihat di Dashboard</a>`,
+        messageId
+      );
       return NextResponse.json({ ok: true });
     }
 
-    const idea = await saveIdea(title, description);
-    const descLine = description ? `\n📝 ${description}` : '';
+    // --- /project Judul | Desc ---
+    if (lower.startsWith('/project')) {
+      const payload = text.slice(8).trim();
+      if (!payload) {
+        await reply(token, msg.chat.id, `⚠️ Format: <code>/project Judul</code> atau <code>/project Judul | Deskripsi</code>`, messageId);
+        return NextResponse.json({ ok: true });
+      }
+      const parts = payload.split('|');
+      const name = parts[0].trim();
+      const desc = parts[1]?.trim() || null;
+      if (!name) {
+        await reply(token, msg.chat.id, '⚠️ Nama project tidak boleh kosong.', messageId);
+        return NextResponse.json({ ok: true });
+      }
+      const project = await saveProject(name, desc);
+      const descLine = desc ? `\n📝 ${desc}` : '';
+      await reply(
+        token,
+        msg.chat.id,
+        `✅ <b>Project tersimpan!</b>\n\n` +
+          `🚀 ${project.name}` +
+          descLine +
+          `\n\n🏷 Status: ${project.status}\n\n` +
+          `👉 <a href="https://produktifmax.maulanacorp.my.id/projects">Lihat di Dashboard</a>`,
+        messageId
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // --- /habit Judul ---
+    if (lower.startsWith('/habit')) {
+      const payload = text.slice(6).trim();
+      if (!payload) {
+        await reply(token, msg.chat.id, `⚠️ Format: <code>/habit Judul habit</code>`, messageId);
+        return NextResponse.json({ ok: true });
+      }
+      const label = payload;
+      const habit = await saveHabit(label);
+      await reply(
+        token,
+        msg.chat.id,
+        `✅ <b>Habit tersimpan!</b>\n\n` +
+          `✨ ${habit.label}\n\n` +
+          `👉 <a href="https://produktifmax.maulanacorp.my.id/habits">Lihat di Dashboard</a>`,
+        messageId
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // --- /ide Judul | Desc ---
+    if (lower.startsWith('/ide')) {
+      const payload = text.slice(4).trim();
+      if (!payload) {
+        await reply(token, msg.chat.id, `⚠️ Format: <code>/ide Judul</code> atau <code>/ide Judul | Deskripsi</code>`, messageId);
+        return NextResponse.json({ ok: true });
+      }
+      const parts = payload.split('|');
+      const title = parts[0].trim();
+      const description = parts[1]?.trim() || null;
+      if (!title) {
+        await reply(token, msg.chat.id, '⚠️ Judul ide tidak boleh kosong.', messageId);
+        return NextResponse.json({ ok: true });
+      }
+      const idea = await saveIdea(title, description);
+      const descLine = description ? `\n📝 ${description}` : '';
+      await reply(
+        token,
+        msg.chat.id,
+        `✅ <b>Ide tersimpan!</b>\n\n` +
+          `💡 ${idea.title}` +
+          descLine +
+          `\n\n📂 Kategori: Telegram\n🏷 Status: Mentah\n\n` +
+          `👉 <a href="https://produktifmax.maulanacorp.my.id/ideas">Lihat di Dashboard</a>`,
+        messageId
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // --- Plain text → Ide (default) ---
+    const idea = await saveIdea(text);
     await reply(
       token,
       msg.chat.id,
       `✅ <b>Ide tersimpan!</b>\n\n` +
         `💡 ${idea.title}` +
-        descLine +
         `\n\n📂 Kategori: Telegram\n🏷 Status: Mentah\n\n` +
         `👉 <a href="https://produktifmax.maulanacorp.my.id/ideas">Lihat di Dashboard</a>`,
       messageId
