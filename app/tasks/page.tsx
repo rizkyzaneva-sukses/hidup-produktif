@@ -1,6 +1,7 @@
 'use client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useRef, useMemo } from 'react';
+import { useCallback } from 'react';
 import { ROLES, PRIORITIES, WORK_TYPES } from '@/lib/constants';
 import { isOverdue, isTodayDate, isFutureDate, formatDateShort } from '@/lib/utils';
 import { Card, CardContent, Button, Input, Select, Dialog, Textarea, EmptyState, Badge } from '@/components/ui';
@@ -161,6 +162,8 @@ export default function TasksPage() {
   const [activePage, setActivePage] = useState(1);
   const [showAllDone, setShowAllDone] = useState(false);
   const [donePage, setDonePage] = useState(1);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const { data: tasks = [] } = useQuery({ queryKey: ['tasks'], queryFn: () => fetcher('/api/tasks') });
   const { data: customRoles = [] } = useQuery({ queryKey: ['custom-roles'], queryFn: () => fetcher('/api/custom-roles') });
@@ -180,6 +183,44 @@ export default function TasksPage() {
     mutationFn: (id: string) => fetch(`/api/tasks/${id}`, { method: 'DELETE' }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
   });
+  const bulkDelete = useMutation({
+    mutationFn: (ids: string[]) => fetch('/api/tasks/bulk-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks'] });
+      setSelectedIds(new Set());
+      setSelectMode(false);
+    },
+  });
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    const currentVisible = selectMode
+      ? [...paginatedActive, ...visibleDone]
+      : [...paginatedActive, ...visibleDone];
+    const allIds = currentVisible.map((t: any) => t.id);
+    setSelectedIds(prev => {
+      const allSelected = allIds.every((id: string) => prev.has(id));
+      if (allSelected) return new Set();
+      return new Set(allIds);
+    });
+  }, [paginatedActive, visibleDone, selectMode]);
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Hapus ${selectedIds.size} task terpilih?`)) return;
+    bulkDelete.mutate(Array.from(selectedIds));
+  };
 
   const filtered = useMemo(() => tasks.filter((t: any) => {
     if (filterRole && t.role !== filterRole) return false;
@@ -342,13 +383,22 @@ export default function TasksPage() {
 
   const hasActiveFilters = filterRole || filterPriority || filterWorkType || filterProject || filterRecurring || searchQuery;
 
-  const TaskRow = ({ task }: { task: Task }) => (
+  const TaskRow = ({ task, showCheck }: { task: Task; showCheck?: boolean }) => (
     <div className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
       task.completed
         ? 'border-slate-800/50 bg-slate-900/30'
         : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
-    } group`}>
-      <input type="checkbox" checked={task.completed} onChange={e => updateTask.mutate({ id: task.id, completed: e.target.checked })} className="w-4 h-4 accent-blue-500 cursor-pointer mt-0.5 shrink-0" />
+    } group ${showCheck && selectedIds.has(task.id) ? 'border-blue-500/60 bg-blue-500/5' : ''}`}>
+      {showCheck ? (
+        <input
+          type="checkbox"
+          checked={selectedIds.has(task.id)}
+          onChange={() => toggleSelect(task.id)}
+          className="w-4 h-4 accent-blue-500 cursor-pointer mt-0.5 shrink-0"
+        />
+      ) : (
+        <input type="checkbox" checked={task.completed} onChange={e => updateTask.mutate({ id: task.id, completed: e.target.checked })} className="w-4 h-4 accent-blue-500 cursor-pointer mt-0.5 shrink-0" />
+      )}
       <div className="flex-1 min-w-0">
         <p className={`text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-white'}`}>{task.title}</p>
         <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -404,9 +454,36 @@ export default function TasksPage() {
         <div className="flex gap-1.5 shrink-0">
           <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${view === 'list' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>List</button>
           <button onClick={() => setView('kanban')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors hidden sm:inline-flex ${view === 'kanban' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}>Kanban</button>
+          <button
+            onClick={() => { setSelectMode(!selectMode); setSelectedIds(new Set()); }}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${selectMode ? 'bg-amber-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'}`}
+          >☑ Pilih</button>
           <Button onClick={() => setShowForm(true)} size="sm">+ Task</Button>
         </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selectMode && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <input
+            type="checkbox"
+            checked={paginatedActive.length + visibleDone.length > 0 && [...paginatedActive, ...visibleDone].every((t: any) => selectedIds.has(t.id))}
+            onChange={toggleSelectAll}
+            className="w-4 h-4 accent-amber-500 cursor-pointer shrink-0"
+          />
+          <span className="text-sm text-amber-200 flex-1">
+            {selectedIds.size > 0
+              ? `${selectedIds.size} task dipilih`
+              : 'Pilih task yang mau dihapus'
+            }
+          </span>
+          {selectedIds.size > 0 && (
+            <Button variant="destructive" size="sm" onClick={handleBulkDelete} disabled={bulkDelete.isPending}>
+              {bulkDelete.isPending ? '⏳ Hapus...' : `🗑 Hapus (${selectedIds.size})`}
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Search box */}
       <div className="relative">
@@ -498,7 +575,7 @@ export default function TasksPage() {
           {/* Active tasks with pagination */}
           {active.length > 0 && (
             <div className="space-y-2">
-              {paginatedActive.map((t: any) => <TaskRow key={t.id} task={t} />)}
+              {paginatedActive.map((t: any) => <TaskRow key={t.id} task={t} showCheck={selectMode} />)}
               {totalActivePages > 1 && (
                 <div className="flex items-center justify-center gap-2 pt-3">
                   <button
@@ -526,7 +603,7 @@ export default function TasksPage() {
             <div>
               <p className="text-xs text-slate-500 uppercase tracking-wider mb-2 px-1 font-medium">Selesai ({done.length})</p>
               <div className="space-y-2">
-                {visibleDone.map((t: any) => <TaskRow key={t.id} task={t} />)}
+                {visibleDone.map((t: any) => <TaskRow key={t.id} task={t} showCheck={selectMode} />)}
               </div>
               
               {/* Show More / pagination controls for done */}
@@ -580,7 +657,7 @@ export default function TasksPage() {
                 <Badge variant="slate">{col.tasks.length}</Badge>
               </div>
               <div className="space-y-2">
-                {col.tasks.length === 0 ? <p className="text-xs text-slate-600 text-center py-6">Kosong</p> : col.tasks.map((t: any) => <TaskRow key={t.id} task={t} />)}
+                {col.tasks.length === 0 ? <p className="text-xs text-slate-600 text-center py-6">Kosong</p> : col.tasks.map((t: any) => <TaskRow key={t.id} task={t} showCheck={selectMode} />)}
               </div>
             </div>
           ))}
