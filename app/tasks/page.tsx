@@ -204,24 +204,6 @@ export default function TasksPage() {
     });
   }, []);
 
-  const toggleSelectAll = useCallback(() => {
-    const currentVisible = selectMode
-      ? [...paginatedActive, ...visibleDone]
-      : [...paginatedActive, ...visibleDone];
-    const allIds = currentVisible.map((t: any) => t.id);
-    setSelectedIds(prev => {
-      const allSelected = allIds.every((id: string) => prev.has(id));
-      if (allSelected) return new Set();
-      return new Set(allIds);
-    });
-  }, [paginatedActive, visibleDone, selectMode]);
-
-  const handleBulkDelete = () => {
-    if (selectedIds.size === 0) return;
-    if (!confirm(`Hapus ${selectedIds.size} task terpilih?`)) return;
-    bulkDelete.mutate(Array.from(selectedIds));
-  };
-
   const filtered = useMemo(() => tasks.filter((t: any) => {
     if (filterRole && t.role !== filterRole) return false;
     if (filterPriority && t.priority !== filterPriority) return false;
@@ -250,6 +232,21 @@ export default function TasksPage() {
   const visibleDone = showAllDone
     ? done.slice((donePage - 1) * ITEMS_PER_PAGE, donePage * ITEMS_PER_PAGE)
     : done.slice(0, DONE_PREVIEW_COUNT);
+  const toggleSelectAll = useCallback(() => {
+    const currentVisible = [...paginatedActive, ...visibleDone];
+    const allIds = currentVisible.map((t: any) => t.id);
+    setSelectedIds(prev => {
+      const allSelected = allIds.length > 0 && allIds.every((id: string) => prev.has(id));
+      if (allSelected) return new Set();
+      return new Set(allIds);
+    });
+  }, [paginatedActive, visibleDone]);
+
+  const handleBulkDelete = () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Hapus ${selectedIds.size} task terpilih?`)) return;
+    bulkDelete.mutate(Array.from(selectedIds));
+  };
 
   // Get current dropdown options based on type
   const getQuickOpts = (): string[] => {
