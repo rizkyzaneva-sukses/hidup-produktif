@@ -10,7 +10,7 @@ import {
   FolderKanban, BookOpen, Bell, CreditCard, BarChart3,
   BookMarked, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen, X,
-  LayoutGrid, ChevronDown,
+  LayoutGrid,
 } from 'lucide-react';
 
 const NAV_MAIN = [
@@ -37,7 +37,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const [kelolaOpen, setKelolaOpen] = useState(false);
   if (pathname === '/login') return <>{children}</>;
 
   async function handleLogout() {
@@ -134,42 +133,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
         <div className="my-1.5 mx-1 border-t border-slate-800/60" />
 
-        {/* Kelola section */}
-        {collapsed ? (
-          <div className="flex justify-center py-0.5">
-            <button
-              onClick={toggleCollapse}
-              className="text-slate-600 hover:text-slate-400 p-1.5 rounded-lg transition-colors"
-              title="Kelola"
-            >
-              <FolderKanban size={16} />
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-0.5">
-            <button
-              onClick={() => setKelolaOpen(v => !v)}
-              className="w-full flex items-center gap-2 px-2.5 h-8 rounded-lg text-slate-500 hover:text-slate-300 transition-colors"
-            >
-              <span className="text-[11px] font-semibold uppercase tracking-wider flex-1 text-left">Kelola</span>
-              <ChevronDown size={14} className={cn('transition-transform duration-200', kelolaOpen ? '' : '-rotate-90')} />
-            </button>
-            {kelolaOpen && NAV_KELOLA.map(item => {
-              const Icon = item.icon;
-              const active = pathname === item.href;
-              return (
-                <Link key={item.href} href={item.href}
-                  className={cn(
-                    'flex items-center gap-2.5 h-8 pl-4 pr-2.5 rounded-lg text-[13px] transition-colors',
-                    active ? 'bg-blue-500/10 text-blue-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/60',
-                  )}>
-                  <Icon size={16} className="shrink-0" strokeWidth={active ? 2.2 : 1.8} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        {/* Kelola section — always visible on desktop */}
+        <div className="space-y-0.5">
+          {!collapsed && (
+            <div className="px-2.5 pt-1 pb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-600">Kelola</div>
+          )}
+          {NAV_KELOLA.map(item => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
+            return (
+              <Link key={item.href} href={item.href}
+                className={cn(
+                  'flex items-center gap-2.5 h-9 rounded-lg text-[13px] font-medium transition-colors',
+                  collapsed ? 'justify-center' : 'px-2.5',
+                  active ? 'bg-blue-500/10 text-blue-400' : 'text-slate-400 hover:text-white hover:bg-slate-800/60',
+                )}
+                title={collapsed ? item.label : undefined}>
+                <Icon size={18} className="shrink-0" strokeWidth={active ? 2.2 : 1.8} />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+        </div>
 
       </nav>
 
