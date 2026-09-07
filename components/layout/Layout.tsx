@@ -10,7 +10,7 @@ import {
   FolderKanban, BookOpen, Bell, CreditCard, BarChart3,
   BookMarked, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen, X,
-  LayoutGrid, ChevronDown, Users,
+  LayoutGrid, ChevronDown,
 } from 'lucide-react';
 
 const NAV_MAIN = [
@@ -22,18 +22,8 @@ const NAV_MAIN = [
 ];
 const NAV_KELOLA = [
   { href: '/inbox', icon: Bell, label: 'Inbox' },
-  { href: '/projects', icon: FolderKanban, label: 'Proyek' },
-  { href: '/learning', icon: BookOpen, label: 'Belajar' },
-  { href: '/subscriptions', icon: CreditCard, label: 'Langganan' },
-  { href: '/laporan', icon: BarChart3, label: 'Laporan' },
-];
-
-const ROLES_NAV = [
-  { href: '/role/CEO', label: 'CEO' },
-  { href: '/role/Suami', label: 'Suami' },
-  { href: '/role/Ayah', label: 'Ayah' },
-  { href: '/role/Anak', label: 'Anak' },
-  { href: '/role/Pelajar', label: 'Pelajar' },
+  { href: '/proyek-belajar', icon: FolderKanban, label: 'Proyek & Belajar' },
+  { href: '/keuangan', icon: CreditCard, label: 'Keuangan' },
 ];
 
 const BOTTOM_NAV = [
@@ -48,8 +38,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [kelolaOpen, setKelolaOpen] = useState(false);
-  const [rolesOpen, setRolesOpen] = useState(false);
-
   if (pathname === '/login') return <>{children}</>;
 
   async function handleLogout() {
@@ -74,7 +62,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     const NAV_MAP: Record<string, string> = {
       'nav-home': '/', 'nav-aktivitas': '/aktivitas', 'nav-rutinitas': '/rutinitas',
       'nav-focus': '/focus', 'nav-quran': '/quran',
-      'nav-inbox': '/inbox', 'nav-projects': '/projects', 'nav-learning': '/learning',
+      'nav-inbox': '/inbox', 'nav-projects': '/proyek-belajar', 'nav-learning': '/proyek-belajar',
+      'nav-keuangan': '/keuangan',
     };
     const handler = (e: KeyboardEvent) => {
       if (matchesKeyCombo(e, getEffectiveKey('search'))) {
@@ -182,48 +171,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        <div className="my-1.5 mx-1 border-t border-slate-800/60" />
-
-        {/* Peran section */}
-        {collapsed ? (
-          <div className="flex justify-center py-0.5">
-            <button
-              onClick={toggleCollapse}
-              className="text-slate-600 hover:text-slate-400 p-1.5 rounded-lg transition-colors"
-              title="Peran"
-            >
-              <Users size={16} />
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-0.5">
-            <button
-              onClick={() => setRolesOpen(v => !v)}
-              className="w-full flex items-center gap-2 px-2.5 h-8 rounded-lg text-slate-500 hover:text-slate-300 transition-colors"
-            >
-              <span className="text-[11px] font-semibold uppercase tracking-wider flex-1 text-left">Peran</span>
-              <ChevronDown size={14} className={cn('transition-transform duration-200', rolesOpen ? '' : '-rotate-90')} />
-            </button>
-            {rolesOpen && ROLES_NAV.map(item => {
-              const active = pathname === item.href;
-              return (
-                <Link key={item.href} href={item.href}
-                  className={cn(
-                    'flex items-center gap-2.5 h-8 pl-4 pr-2.5 rounded-lg text-[13px] transition-colors',
-                    active ? 'bg-blue-500/10 text-blue-400 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/60',
-                  )}>
-                  <span className={cn(
-                    'w-5 h-5 rounded-md flex items-center justify-center text-xs font-bold shrink-0',
-                    active ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-800 text-slate-500',
-                  )}>
-                    {item.label.charAt(0)}
-                  </span>
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        )}
       </nav>
 
       {/* Bottom actions */}
@@ -352,31 +299,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 })}
               </div>
             </div>
-
-            <div className="mx-5 border-t border-slate-800/60" />
-
-            {/* Peran chips */}
-            <div className="px-5 py-4">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Peran</p>
-              <div className="flex flex-wrap gap-2">
-                {ROLES_NAV.map(item => {
-                  const active = pathname === item.href;
-                  return (
-                    <Link key={item.href} href={item.href}
-                      className={cn(
-                        'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors',
-                        active
-                          ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/30'
-                          : 'text-slate-300 bg-slate-800/60 active:bg-slate-800',
-                      )}>
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mx-5 border-t border-slate-800/60" />
 
             {/* Settings & logout */}
             <div className="px-5 py-4 pb-8 space-y-0.5">
