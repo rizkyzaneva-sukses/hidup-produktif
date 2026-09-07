@@ -6,8 +6,7 @@ import { cn } from '@/lib/utils';
 import { QuickCaptureFAB } from '@/components/shared/QuickCaptureFAB';
 import { getEffectiveKey, matchesKeyCombo } from '@/lib/shortcuts';
 import {
-  Home, Target, ListTodo, Flame, Timer,
-  Lightbulb, Flag, Smile,
+  Home, Target, Flame, Timer,
   FolderKanban, BookOpen, Bell, CreditCard, BarChart3,
   BookMarked, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen, X,
@@ -16,23 +15,15 @@ import {
 
 const NAV_MAIN = [
   { href: '/', icon: Home, label: 'Beranda' },
-  { href: '/sprint', icon: Target, label: 'Sprint' },
-  { href: '/tasks', icon: ListTodo, label: 'Tasks' },
-  { href: '/habits', icon: Flame, label: 'Habits' },
+  { href: '/aktivitas', icon: Target, label: 'Aktivitas' },
+  { href: '/rutinitas', icon: Flame, label: 'Rutinitas' },
   { href: '/focus', icon: Timer, label: 'Focus' },
   { href: '/quran', icon: BookOpen, label: 'Quran' },
 ];
-
-const NAV_QUICK = [
-  { href: '/ideas', icon: Lightbulb, label: 'Ideas' },
-  { href: '/goals', icon: Flag, label: 'Goals' },
-  { href: '/mood', icon: Smile, label: 'Mood' },
-];
-
 const NAV_KELOLA = [
+  { href: '/inbox', icon: Bell, label: 'Inbox' },
   { href: '/projects', icon: FolderKanban, label: 'Proyek' },
   { href: '/learning', icon: BookOpen, label: 'Belajar' },
-  { href: '/reminders', icon: Bell, label: 'Reminders' },
   { href: '/subscriptions', icon: CreditCard, label: 'Langganan' },
   { href: '/laporan', icon: BarChart3, label: 'Laporan' },
 ];
@@ -47,9 +38,9 @@ const ROLES_NAV = [
 
 const BOTTOM_NAV = [
   { href: '/', icon: Home, label: 'Home' },
-  { href: '/sprint', icon: Target, label: 'Sprint' },
-  { href: '/tasks', icon: ListTodo, label: 'Tasks' },
-  { href: '/habits', icon: Flame, label: 'Habits' },
+  { href: '/aktivitas', icon: Target, label: 'Aktivitas' },
+  { href: '/rutinitas', icon: Flame, label: 'Rutinitas' },
+  { href: '/focus', icon: Timer, label: 'Focus' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -81,10 +72,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const NAV_MAP: Record<string, string> = {
-      'nav-home': '/', 'nav-sprint': '/sprint', 'nav-tasks': '/tasks',
-      'nav-habits': '/habits', 'nav-focus': '/focus', 'nav-goals': '/goals',
-      'nav-mood': '/mood', 'nav-ideas': '/ideas',
-      'nav-projects': '/projects', 'nav-learning': '/learning', 'nav-quran': '/quran',
+      'nav-home': '/', 'nav-aktivitas': '/aktivitas', 'nav-rutinitas': '/rutinitas',
+      'nav-focus': '/focus', 'nav-quran': '/quran',
+      'nav-inbox': '/inbox', 'nav-projects': '/projects', 'nav-learning': '/learning',
     };
     const handler = (e: KeyboardEvent) => {
       if (matchesKeyCombo(e, getEffectiveKey('search'))) {
@@ -153,30 +143,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             );
           })}
         </div>
-
-        {/* Quick actions */}
-        <div className={cn(
-          'py-1.5',
-          collapsed ? 'flex flex-col items-center gap-0.5' : 'flex items-center gap-0.5 px-0.5',
-        )}>
-          {NAV_QUICK.map(item => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}
-                className={cn(
-                  'flex items-center justify-center rounded-lg transition-colors',
-                  collapsed ? 'w-8 h-8' : 'h-8 flex-1',
-                  active ? 'text-blue-400 bg-blue-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/60',
-                )}
-                title={item.label}
-              >
-                <Icon size={16} strokeWidth={active ? 2.2 : 1.8} />
-              </Link>
-            );
-          })}
-        </div>
-
         <div className="my-1.5 mx-1 border-t border-slate-800/60" />
 
         {/* Kelola section */}
@@ -366,33 +332,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </button>
               </div>
             </div>
-
-            {/* Quick access grid */}
-            <div className="px-5 pb-4">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2.5">Quick</p>
-              <div className="grid grid-cols-4 gap-2">
-                {[
-                  ...NAV_QUICK,
-                  { href: '/focus', icon: Timer, label: 'Focus' },
-                ].map(item => {
-                  const Icon = item.icon;
-                  const active = pathname === item.href;
-                  return (
-                    <Link key={item.href} href={item.href}
-                      className={cn(
-                        'flex flex-col items-center gap-1.5 py-3 rounded-lg transition-colors',
-                        active ? 'bg-blue-500/10 text-blue-400' : 'text-slate-400 active:bg-slate-800',
-                      )}>
-                      <Icon size={22} strokeWidth={1.6} />
-                      <span className="text-xs font-medium">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="mx-5 border-t border-slate-800/60" />
-
             {/* Kelola list */}
             <div className="px-5 py-4">
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Kelola</p>

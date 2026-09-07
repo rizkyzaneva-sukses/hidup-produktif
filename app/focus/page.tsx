@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { format, startOfWeek } from 'date-fns';
 
@@ -12,6 +12,17 @@ const MODES = [
 ];
 
 const STORAGE_KEY = 'focus_state';
+const SOUND_STORAGE_KEY = 'focus_ambient_sound';
+const VOLUME_STORAGE_KEY = 'focus_ambient_volume';
+
+const SOUNDS = [
+  { id: 'none', label: 'None', emoji: '🔇' },
+  { id: 'white-noise', label: 'White Noise', emoji: '🌫️' },
+  { id: 'rain', label: 'Rain', emoji: '🌧️' },
+  { id: 'nature', label: 'Nature', emoji: '🐦' },
+] as const;
+
+type SoundId = typeof SOUNDS[number]['id'];
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -35,7 +46,6 @@ function loadStorage() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw);
-    // Auto-reset if stored date is not today
     if (data.date !== todayDateStr()) return null;
     return data;
   } catch { return null; }
@@ -65,12 +75,16 @@ export default function FocusPage() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sessionStartRef = useRef<number>(Date.now());
 
+  // Ambient audio state
+  const [soundId, setSoundId] = useState<SoundId>('none');
+  const [volume, setVolume] = useState(0.5);
+  const ambientNodesRef = useRef<{ nodes: AudioNode[]; ctx: AudioContext; cleanups: (() => void)[] } | null>(null);
+
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks-focus'],
     queryFn: () => fetcher('/api/tasks?completed=false'),
   });
 
-  // Weekly focus sessions from DB
   const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
   const { data: weekSessions = [] } = useQuery({
     queryKey: ['focus-sessions', weekStart],
@@ -86,6 +100,18 @@ export default function FocusPage() {
       setCompletedPomodoros(stored.completedPomodoros || 0);
       setLogs(stored.logs || []);
     }
+    // Load sound preference
+    try {
+      const savedSound = localStorage.getItem(SOUND_STORAGE_KEY);
+      if (savedSound && SOUNDS.some(s => s.id === savedSound)) {
+        setSoundId(savedSound as SoundId);
+      }
+      const savedVol = localStorage.getItem(VOLUME_STORAGE_KEY);
+      if (savedVol !== null) {
+        const v = parseFloat(savedVol);
+        if (!isNaN(v) && v >= 0 && v <= 1) setVolume(v);
+      }
+    } catch {}
     setHydrated(true);
   }, []);
 
@@ -116,6 +142,216 @@ export default function FocusPage() {
     } catch {}
   };
 
+  // ─── Ambient Audio Engine ──────────────────────────────────────
+
+  const stopAmbient = useCallback(() => {
+    if (ambientNodesRef.current) {
+      const { nodes, ctx, cleanups } = ambientNodesRef.current;
+      // Run cleanup functions (bird chirp intervals, etc.)
+      cleanups.forEach(fn => fn());
+      // Fade out all gain nodes
+      nodes.forEach(node => {
+        if (node instanceof GainNode) {
+          node.gain.cancelScheduledValues(ctx.currentTime);
+          node.gain.setValueAtTime(node.gain.value, ctx.currentTime);
+          node.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        }
+      });
+      // Disconnect and close after fade
+      setTimeout(() => {
+        nodes.forEach(node => {
+          try { node.disconnect(); } catch {}
+        });
+        ctx.close();
+      }, 600);
+      ambientNodesRef.current = null;
+    }
+  }, []);
+
+  const startAmbient = useCallback((sound: SoundId, vol: number) => {
+    if (sound === 'none') return;
+    // Stop any existing ambient
+    stopAmbient();
+
+    const ctx = new AudioContext();
+    const masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(vol, ctx.currentTime);
+    masterGain.connect(ctx.destination);
+
+    const allNodes: AudioNode[] = [masterGain];
+    const cleanups: (() => void)[] = [];
+
+    if (sound === 'white-noise') {
+      // White noise: random samples in a buffer
+      const bufferSize = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+      source.connect(masterGain);
+      source.start();
+      allNodes.push(source);
+    } else if (sound === 'rain') {
+      // Rain: white noise → lowpass filter with a secondary softer layer
+      const bufferSize = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, ctx.currentTime);
+      filter.Q.setValueAtTime(0.5, ctx.currentTime);
+
+      // Secondary softer layer for texture
+      const source2 = ctx.createBufferSource();
+      source2.buffer = buffer;
+      source2.loop = true;
+      const gain2 = ctx.createGain();
+      gain2.gain.setValueAtTime(0.3, ctx.currentTime);
+
+      source.connect(filter);
+      filter.connect(masterGain);
+      source.start();
+
+      source2.connect(gain2);
+      gain2.connect(filter);
+      source2.start();
+
+      allNodes.push(source, filter, source2, gain2);
+    } else if (sound === 'nature') {
+      // Nature: modulated oscillators simulating bird chirps over a wind layer
+      const bufferSize = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      // Ambient wind/hum layer
+      const windSource = ctx.createBufferSource();
+      windSource.buffer = buffer;
+      windSource.loop = true;
+      const windFilter = ctx.createBiquadFilter();
+      windFilter.type = 'lowpass';
+      windFilter.frequency.setValueAtTime(400, ctx.currentTime);
+      const windGain = ctx.createGain();
+      windGain.gain.setValueAtTime(0.15, ctx.currentTime);
+      windSource.connect(windFilter);
+      windFilter.connect(windGain);
+      windGain.connect(masterGain);
+      windSource.start();
+      allNodes.push(windSource, windFilter, windGain);
+
+      // Bird chirps using oscillators with scheduled frequency changes
+      const createBird = (baseFreq: number, chirpInterval: number, chirpOffset: number) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        const birdGain = ctx.createGain();
+        birdGain.gain.setValueAtTime(0, ctx.currentTime);
+
+        osc.connect(birdGain);
+        birdGain.connect(masterGain);
+        osc.start();
+
+        let refillTimer: ReturnType<typeof setInterval> | null = null;
+
+        // Schedule chirps
+        const scheduleChirps = (startTime: number) => {
+          for (let i = 0; i < 500; i++) {
+            const t = startTime + chirpOffset + i * chirpInterval + Math.random() * 0.3;
+            const dur = 0.08 + Math.random() * 0.06;
+            const freq = baseFreq + Math.random() * 200 - 100;
+            const vol = 0.06 + Math.random() * 0.04;
+
+            osc.frequency.setValueAtTime(freq, t);
+            osc.frequency.linearRampToValueAtTime(freq + 300, t + dur * 0.3);
+            osc.frequency.linearRampToValueAtTime(freq + 100, t + dur * 0.7);
+            osc.frequency.linearRampToValueAtTime(freq, t + dur);
+
+            birdGain.gain.setValueAtTime(vol, t);
+            birdGain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          }
+        };
+        // Schedule initial batch
+        scheduleChirps(ctx.currentTime);
+        // Refill periodically
+        refillTimer = setInterval(() => {
+          scheduleChirps(ctx.currentTime);
+        }, 30000);
+
+        allNodes.push(osc, birdGain);
+        return () => {
+          if (refillTimer) clearInterval(refillTimer);
+          try { osc.stop(); } catch {}
+        };
+      };
+
+      cleanups.push(createBird(2000, 1.2, 0));
+      cleanups.push(createBird(2800, 1.8, 0.6));
+      cleanups.push(createBird(3500, 2.5, 1.2));
+    }
+
+    ambientNodesRef.current = { nodes: allNodes, ctx, cleanups };
+  }, [stopAmbient]);
+
+  // Cleanup ambient on unmount
+  useEffect(() => {
+    return () => {
+      stopAmbient();
+    };
+  }, [stopAmbient]);
+
+  // Start/stop ambient based on running state
+  useEffect(() => {
+    if (running && soundId !== 'none') {
+      startAmbient(soundId, volume);
+    } else if (!running) {
+      stopAmbient();
+    }
+  }, [running, soundId, volume, startAmbient, stopAmbient]);
+
+  // Update volume on the fly if already playing
+  useEffect(() => {
+    if (ambientNodesRef.current) {
+      const { nodes } = ambientNodesRef.current;
+      const masterGain = nodes[0] as GainNode;
+      if (masterGain && masterGain instanceof GainNode) {
+        masterGain.gain.cancelScheduledValues(0);
+        masterGain.gain.setValueAtTime(volume, 0);
+      }
+    }
+  }, [volume]);
+
+  const selectSound = (id: SoundId) => {
+    setSoundId(id);
+    try { localStorage.setItem(SOUND_STORAGE_KEY, id); } catch {}
+    // If timer is running, restart ambient with new sound
+    if (running) {
+      if (id === 'none') {
+        stopAmbient();
+      } else {
+        startAmbient(id, volume);
+      }
+    }
+  };
+
+  const selectVolume = (v: number) => {
+    setVolume(v);
+    try { localStorage.setItem(VOLUME_STORAGE_KEY, String(v)); } catch {}
+  };
+
+  // ─── Timer ─────────────────────────────────────────────────────
+
   useEffect(() => {
     if (running) {
       intervalRef.current = setInterval(() => {
@@ -123,11 +359,11 @@ export default function FocusPage() {
           if (prev <= 1) {
             clearInterval(intervalRef.current!);
             setRunning(false);
+            stopAmbient();
             playDing();
             const endTime = Date.now();
 
             if (modeIdx === 0) {
-              // Pomodoro completed
               setCompletedPomodoros(c => {
                 const next = c + 1;
                 setLogs(prevLogs => {
@@ -143,16 +379,13 @@ export default function FocusPage() {
                 });
                 return next;
               });
-              // Save to DB & show break reminder
               saveSession('Pomodoro', sessionStartRef.current, endTime);
               setBreakBanner(true);
-              // Auto-switch to short break after 3 seconds
               setTimeout(() => {
                 setBreakBanner(false);
-                setModeIdx(1); // Switch to Short Break
+                setModeIdx(1);
               }, 3000);
             } else {
-              // Break completed
               const breakLabel = modeIdx === 1 ? 'Short Break' : 'Long Break';
               saveSession(breakLabel, sessionStartRef.current, endTime);
             }
@@ -165,7 +398,7 @@ export default function FocusPage() {
       clearInterval(intervalRef.current!);
     }
     return () => clearInterval(intervalRef.current!);
-  }, [running, modeIdx, selectedTaskId, tasks]);
+  }, [running, modeIdx, selectedTaskId, tasks, stopAmbient]);
 
   const playDing = () => {
     try {
@@ -184,7 +417,11 @@ export default function FocusPage() {
     } catch {}
   };
 
-  const reset = () => { setRunning(false); setTimeLeft(mode.duration); };
+  const reset = () => {
+    setRunning(false);
+    stopAmbient();
+    setTimeLeft(mode.duration);
+  };
 
   const clearDay = () => {
     setCompletedPomodoros(0);
@@ -246,6 +483,47 @@ export default function FocusPage() {
           </div>
         </div>
       )}
+
+      {/* ─── Sound Picker ──────────────────────────────────── */}
+      <div className="mb-6 p-4 rounded-xl bg-slate-800/40 border border-slate-700/50">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-lg">🎵</span>
+          <h2 className="text-sm font-medium text-slate-300">Ambient Sound</h2>
+          {running && soundId !== 'none' && (
+            <span className="ml-auto flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs text-emerald-400">Playing</span>
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          {SOUNDS.map(s => (
+            <button key={s.id} onClick={() => selectSound(s.id)}
+              className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-lg text-xs font-medium transition-all ${
+                soundId === s.id
+                  ? 'bg-blue-500/20 border border-blue-500/50 text-blue-300'
+                  : 'bg-slate-700/30 border border-transparent text-slate-400 hover:bg-slate-700/60 hover:text-slate-200'
+              }`}>
+              <span className="text-xl">{s.emoji}</span>
+              <span>{s.label}</span>
+            </button>
+          ))}
+        </div>
+        {soundId !== 'none' && (
+          <div className="mt-3 flex items-center gap-3">
+            <span className="text-slate-500 text-xs">🔈</span>
+            <input type="range" min="0" max="1" step="0.01" value={volume}
+              onChange={e => selectVolume(parseFloat(e.target.value))}
+              className="flex-1 h-1.5 appearance-none bg-slate-700 rounded-full cursor-pointer
+                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5
+                         [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-400
+                         [&::-webkit-slider-thumb]:hover:bg-blue-300 [&::-webkit-slider-thumb]:transition-colors
+                         [&::-webkit-slider-thumb]:shadow-md" />
+            <span className="text-slate-500 text-xs">🔊</span>
+            <span className="text-xs text-slate-500 w-8 text-right">{Math.round(volume * 100)}%</span>
+          </div>
+        )}
+      </div>
 
       {/* Mode selector */}
       <div className="flex gap-1 bg-slate-800/60 p-1 rounded-lg mb-6">
