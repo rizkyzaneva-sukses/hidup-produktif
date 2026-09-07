@@ -1,6 +1,6 @@
 'use client';
-import HabitsPage from '@/app/habits/page';
-import MoodPage from '@/app/mood/page';
+import HabitsPage from '@/app/habits/_habits-content';
+import MoodPage from '@/app/mood/_mood-content';
 
 export default function RutinitasPage() {
   return (

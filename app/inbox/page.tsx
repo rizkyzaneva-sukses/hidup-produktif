@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import IdeasPage from '@/app/ideas/page';
-import RemindersPage from '@/app/reminders/page';
+import IdeasPage from '@/app/ideas/_ideas-content';
+import RemindersPage from '@/app/reminders/_reminders-content';
 
 export default function InboxPage() {
   return (
