@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format, startOfWeek } from 'date-fns';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
@@ -71,6 +71,7 @@ export default function FocusPage() {
   const [logs, setLogs] = useState<{ task: string; time: string; mode: string }[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [breakBanner, setBreakBanner] = useState(false);
+  const [widgetOpen, setWidgetOpen] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sessionStartRef = useRef<number>(Date.now());
@@ -84,6 +85,35 @@ export default function FocusPage() {
     queryKey: ['tasks-focus'],
     queryFn: () => fetcher('/api/tasks?completed=false'),
   });
+
+  // Sprint tasks for today
+  const { data: todaySprint } = useQuery({
+    queryKey: ['focus-sprint-today'],
+    queryFn: () => fetcher(`/api/sprints?date=${format(new Date(), 'yyyy-MM-dd')}`),
+  });
+
+  const sprintTasks = useMemo(() => {
+    if (!todaySprint?.tasks) return [];
+    return todaySprint.tasks.map((st: any) => {
+      const live = tasks.find((t: any) => t.id === st.task_id);
+      return { ...st, completed: live?.completed ?? false };
+    });
+  }, [todaySprint, tasks]);
+
+  const toggleSprintTask = useMutation({
+    mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
+      fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tasks-focus'] });
+      qc.invalidateQueries({ queryKey: ['focus-sprint-today'] });
+    },
+  });
+
+  const sprintCompletedCount = sprintTasks.filter((t: any) => t.completed).length;
 
   const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
   const { data: weekSessions = [] } = useQuery({
@@ -594,6 +624,89 @@ export default function FocusPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ─── Floating Focus Widget ──────────────────────────── */}
+      {running && (
+        <div className="fixed bottom-4 right-4 z-50" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
+          {widgetOpen ? (
+            <div className="w-72 bg-slate-900/95 backdrop-blur-md border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className={`px-4 py-3 flex items-center justify-between border-b border-slate-700/40 ${mode.bg}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono text-lg font-bold ${mode.color}`}>{formatTime(timeLeft)}</span>
+                  <span className="text-slate-400 text-xs">{mode.label}</span>
+                </div>
+                <button
+                  onClick={() => setWidgetOpen(false)}
+                  className="w-6 h-6 rounded-full bg-slate-700/50 hover:bg-slate-600/50 text-slate-400 hover:text-white text-xs flex items-center justify-center transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Progress bar */}
+              <div className="h-1 bg-slate-800">
+                <div
+                  className={`h-full transition-all duration-1000 ease-linear ${modeIdx === 0 ? 'bg-red-500' : modeIdx === 1 ? 'bg-green-500' : 'bg-blue-500'}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+
+              {/* Sprint tasks */}
+              {sprintTasks.length > 0 && (
+                <div className="px-4 py-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-slate-500 font-medium">Sprint Tasks</span>
+                    <span className="text-xs text-slate-600">{sprintCompletedCount}/{sprintTasks.length}</span>
+                  </div>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {sprintTasks.map((st: any) => (
+                      <label
+                        key={st.task_id}
+                        className="flex items-center gap-2.5 py-1.5 px-2 rounded-lg hover:bg-slate-800/50 cursor-pointer transition-colors group"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={st.completed}
+                          onChange={e => toggleSprintTask.mutate({ id: st.task_id, completed: e.target.checked })}
+                          className="w-4 h-4 rounded border-slate-600 text-blue-500 focus:ring-blue-500/40 cursor-pointer shrink-0"
+                        />
+                        <span className={`text-xs flex-1 min-w-0 truncate ${st.completed ? 'line-through text-slate-500' : 'text-slate-300 group-hover:text-white'}`}>
+                          {st.task_title}
+                        </span>
+                        <span className="text-[10px] text-slate-600 shrink-0">{st.duration}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pomodoro count */}
+              {completedPomodoros > 0 && (
+                <div className="px-4 py-2 border-t border-slate-700/40 flex items-center gap-1.5">
+                  {Array.from({ length: Math.min(completedPomodoros, 6) }).map((_, i) => (
+                    <span key={i} className="w-2 h-2 rounded-full bg-red-400" />
+                  ))}
+                  {completedPomodoros > 6 && <span className="text-[10px] text-red-400">+{completedPomodoros - 6}</span>}
+                  <span className="text-[10px] text-slate-600 ml-auto">{completedPomodoros}🍅</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => setWidgetOpen(true)}
+              className="group flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-slate-700/50 rounded-full px-4 py-2.5 shadow-xl hover:shadow-2xl hover:border-slate-600/50 transition-all hover:scale-105"
+            >
+              <span className={`font-mono text-sm font-bold ${mode.color}`}>{formatTime(timeLeft)}</span>
+              {sprintTasks.length > 0 && (
+                <span className="text-[10px] text-slate-500 group-hover:text-slate-400">
+                  {sprintCompletedCount}/{sprintTasks.length}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       )}
     </div>
