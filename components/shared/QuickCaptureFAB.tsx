@@ -5,7 +5,7 @@ import { ROLES, IDEA_CATEGORIES } from '@/lib/constants';
 import { Button, Input } from '@/components/ui';
 
 const ROLE_MAP: Record<string, string> = {
-  ceo: 'CEO', suami: 'Suami', ayah: 'Ayah', anak: 'Anak', pelajar: 'Pelajar', umum: 'Umum',
+  ceo: 'CEO', suami: 'Suami', ayah: 'Ayah', anak: 'Anak', person: 'Person', umum: 'Umum',
 };
 const CAT_MAP: Record<string, string> = {
   bisnis: 'Bisnis', produk: 'Produk', farm: 'Maulana Farm', keuangan: 'Keuangan', personal: 'Personal', random: 'Random',

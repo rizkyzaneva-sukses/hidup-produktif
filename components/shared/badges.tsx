@@ -23,9 +23,10 @@ export function RoleBadge({ role, size = 'sm' }: RoleBadgeProps) {
 interface WorkTypeBadgeProps { type: string; size?: 'sm' | 'md'; }
 export function WorkTypeBadge({ type, size = 'sm' }: WorkTypeBadgeProps) {
   const colors: Record<string, string> = {
-    'Deep Work': 'bg-red-500/15 text-red-300',
-    'Admin': 'bg-yellow-500/15 text-yellow-300',
+    'Deep-Work': 'bg-red-500/15 text-red-300',
     'Shallow': 'bg-emerald-500/15 text-emerald-300',
+    'Recovery': 'bg-blue-500/15 text-blue-300',
+    'Batch-Chat': 'bg-purple-500/15 text-purple-300',
   };
   return (
     <span className={cn('inline-flex items-center px-1.5 py-0.5 rounded-md font-medium', colors[type] || 'bg-slate-500/15 text-slate-300', size === 'sm' ? 'text-xs' : 'text-sm')}>

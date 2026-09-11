@@ -17,7 +17,7 @@ function TaskForm({ task, onSave, onCancel, customRoles, projects }: { task?: Ta
     title: task?.title || '',
     role: task?.role || 'CEO',
     priority: task?.priority || 'Sedang',
-    work_type: task?.work_type || 'Admin',
+    work_type: task?.work_type || 'Shallow',
     due_date: task?.due_date || '',
     notes: task?.notes || '',
     project_id: task?.project_id || '',
@@ -70,7 +70,7 @@ function BatchImport({ allRoles, onComplete }: { allRoles: string[]; onComplete:
     if (!title) return null;
     let role = 'CEO';
     let priority = 'Sedang';
-    let work_type = 'Admin';
+    let work_type = 'Shallow';
 
     const roleMatch = title.match(/@(\w+)/);
     if (roleMatch) {
@@ -84,7 +84,7 @@ function BatchImport({ allRoles, onComplete }: { allRoles: string[]; onComplete:
       if (matched) priority = matched;
       title = title.replace(prioMatch[0], '').trim();
     }
-    const wtMatch = title.match(/\$(\w+)/);
+    const wtMatch = title.match(/\$([\w-]+)/);
     if (wtMatch) {
       const matched = WORK_TYPES.find(w => w.toLowerCase().replace(/\s/g, '') === wtMatch![1].toLowerCase());
       if (matched) work_type = matched;
@@ -132,7 +132,7 @@ function BatchImport({ allRoles, onComplete }: { allRoles: string[]; onComplete:
         </div>
         <textarea
           value={text} onChange={e => { setText(e.target.value); setResult(null); }} rows={4}
-          placeholder={"Satu task per baris, contoh:\n@ceo #tinggi $deepwork Siapkan proposal Q3\n@ayah Olahraga pagi bersama anak"}
+          placeholder={"Satu task per baris, contoh:\n@ceo #tinggi $deep-work Siapkan proposal Q3\n@ayah Olahraga pagi bersama anak"}
           className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none mb-2"
         />
         <Button size="sm" onClick={handleImport} disabled={!text.trim() || importing}>
@@ -277,7 +277,7 @@ export default function TasksPage() {
     let title = quickInput.trim();
     let role = 'CEO';
     let priority = 'Sedang';
-    let work_type = 'Admin';
+    let work_type = 'Shallow';
     let project_id = '';
 
     // Parse @role
@@ -295,7 +295,7 @@ export default function TasksPage() {
       title = title.replace(prioMatch[0], '').trim();
     }
     // Parse $worktype
-    const wtMatch = title.match(/\$(\w+)/);
+    const wtMatch = title.match(/\$([\w-]+)/);
     if (wtMatch) {
       const matched = WORK_TYPES.find(w => w.toLowerCase().replace(/\s/g, '') === wtMatch[1].toLowerCase());
       if (matched) work_type = matched;
@@ -518,7 +518,7 @@ export default function TasksPage() {
             ))}
           </div>
         )}
-        <p className="text-xs text-slate-600 mt-1">@role · #tinggi/sedang/rendah · $deepwork/admin/shallow · %project</p>
+        <p className="text-xs text-slate-600 mt-1">@role · #tinggi/sedang/rendah · $deep-work/shallow/recovery/batch-chat · %project</p>
       </div>
 
       {/* Filters - collapsible on mobile */}

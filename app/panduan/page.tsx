@@ -62,9 +62,9 @@ const FEATURES: Feature[] = [
     description: 'Kelola semua task dengan role, prioritas, jenis pekerjaan, due date, dan proyek. Fitur lengkap untuk manajemen tugas.',
     actions: [
       'Klik "+" untuk buat task baru',
-      'Atur role (CEO, Suami, Ayah, Anak, Pelajar)',
+      'Atur role (CEO, Suami, Ayah, Anak, Person)',
       'Set prioritas: Low, Medium, High, Urgent',
-      'Pilih work type: Deep, Shallow, Admin, Meeting',
+      'Pilih work type: Deep-Work, Shallow, Recovery, Batch-Chat',
       'Tetapkan due date dan assign ke proyek',
       'Edit atau hapus task kapan saja',
     ],
@@ -417,7 +417,7 @@ const CATEGORIES = [
 const SHORTCUTS = [
   { keys: 'Ctrl + Q', action: 'Parkir Ide — Quick capture ide baru' },
   { keys: 'Ctrl + Shift + F', action: 'Pencarian — Buka halaman search' },
-  { keys: 'Alt + 1-8', action: 'Navigasi — Lompat ke halaman utama' },
+  { keys: 'Alt + 1-8', action: 'Navigasi — Lompat ke halaman utama (Beranda s.d. Keuangan)' },
   { keys: 'Ctrl + Enter', action: 'Simpan — Submit form apapun' },
 ];
 
@@ -613,7 +613,7 @@ export default function PanduanPage() {
                   step: 1,
                   emoji: '👤',
                   title: 'Daftar & Login',
-                  desc: 'Buat akun baru atau login. Atur role hidupmu: CEO, Suami, Ayah, Anak, Pelajar.',
+                  desc: 'Buat akun baru atau login. Atur role hidupmu: CEO, Suami, Ayah, Anak, Person.',
                 },
                 {
                   step: 2,
@@ -770,7 +770,7 @@ export default function PanduanPage() {
                   { emoji: '💑', name: 'Suami', desc: 'Pasangan & keluarga' },
                   { emoji: '👨‍👧', name: 'Ayah', desc: 'Anak & parenting' },
                   { emoji: '🏠', name: 'Anak', desc: 'Orang tua & keluarga' },
-                  { emoji: '📖', name: 'Pelajar', desc: 'Belajar & pengembangan' },
+                  { emoji: '🧑', name: 'Person', desc: 'Belajar & pengembangan' },
                 ].map(role => (
                   <div key={role.name} className="text-center p-3 rounded-lg bg-slate-700/30 border border-slate-700/50">
                     <span className="text-2xl">{role.emoji}</span>

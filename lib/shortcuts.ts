@@ -15,15 +15,15 @@ export const SHORTCUTS: ShortcutDef[] = [
   { id: 'search', label: 'Pencarian', description: 'Buka halaman pencarian', defaultKey: 'Ctrl+Shift+F', group: 'global', editable: true },
   // Form
   { id: 'submit', label: 'Simpan Form', description: 'Submit/simpan form yang sedang aktif', defaultKey: 'Ctrl+Enter', group: 'form', editable: false },
-  // Navigation
+  // Navigation (sesuai sidebar terbaru)
   { id: 'nav-home', label: 'Beranda', description: 'Pergi ke Beranda', defaultKey: 'Alt+1', group: 'nav', editable: true },
-  { id: 'nav-sprint', label: 'Daily Sprint', description: 'Pergi ke Daily Sprint', defaultKey: 'Alt+2', group: 'nav', editable: true },
-  { id: 'nav-tasks', label: 'Tasks', description: 'Pergi ke Tasks', defaultKey: 'Alt+3', group: 'nav', editable: true },
-  { id: 'nav-habits', label: 'Habits', description: 'Pergi ke Habits', defaultKey: 'Alt+4', group: 'nav', editable: true },
-  { id: 'nav-focus', label: 'Focus Mode', description: 'Pergi ke Focus Mode', defaultKey: 'Alt+5', group: 'nav', editable: true },
-  { id: 'nav-ideas', label: 'Parkir Ide (halaman)', description: 'Pergi ke halaman Parkir Ide', defaultKey: 'Alt+6', group: 'nav', editable: true },
-  { id: 'nav-projects', label: 'Proyek', description: 'Pergi ke Proyek', defaultKey: 'Alt+7', group: 'nav', editable: true },
-  { id: 'nav-learning', label: 'Log Belajar', description: 'Pergi ke Log Belajar', defaultKey: 'Alt+8', group: 'nav', editable: true },
+  { id: 'nav-aktivitas', label: 'Aktivitas', description: 'Pergi ke Aktivitas', defaultKey: 'Alt+2', group: 'nav', editable: true },
+  { id: 'nav-rutinitas', label: 'Rutinitas', description: 'Pergi ke Rutinitas', defaultKey: 'Alt+3', group: 'nav', editable: true },
+  { id: 'nav-focus', label: 'Focus', description: 'Pergi ke Focus Mode', defaultKey: 'Alt+4', group: 'nav', editable: true },
+  { id: 'nav-quran', label: 'Quran', description: 'Pergi ke halaman Quran', defaultKey: 'Alt+5', group: 'nav', editable: true },
+  { id: 'nav-inbox', label: 'Inbox', description: 'Pergi ke Inbox', defaultKey: 'Alt+6', group: 'nav', editable: true },
+  { id: 'nav-projects', label: 'Proyek & Belajar', description: 'Pergi ke Proyek & Belajar', defaultKey: 'Alt+7', group: 'nav', editable: true },
+  { id: 'nav-keuangan', label: 'Keuangan', description: 'Pergi ke Keuangan', defaultKey: 'Alt+8', group: 'nav', editable: true },
 ];
 
 const STORAGE_KEY = 'app-shortcuts';

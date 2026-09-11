@@ -24,7 +24,7 @@ export default function RolePage({ params }: { params: Promise<{ slug: string }>
   });
 
   const createTask = useMutation({
-    mutationFn: (title: string) => fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, role: roleName, priority: 'Sedang', work_type: 'Admin' }) }),
+    mutationFn: (title: string) => fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, role: roleName, priority: 'Sedang', work_type: 'Shallow' }) }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['tasks', roleName] }); setQuickInput(''); },
   });
   const toggleTask = useMutation({

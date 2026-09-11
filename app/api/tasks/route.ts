@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         title: body.title,
         role: body.role || 'CEO',
         priority: body.priority || 'Sedang',
-        workType: body.work_type || 'Admin',
+        workType: body.work_type || 'Shallow',
         completed: false,
         notes: body.notes || null,
         dueDate: body.due_date || null,

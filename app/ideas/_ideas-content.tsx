@@ -30,7 +30,7 @@ export default function IdeasPage() {
   });
   const convertToTask = useMutation({
     mutationFn: async (idea: any) => {
-      await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: idea.title, role: idea.role === 'Umum' ? 'CEO' : idea.role, priority: 'Sedang', work_type: 'Admin' }) });
+      await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: idea.title, role: idea.role === 'Umum' ? 'CEO' : idea.role, priority: 'Sedang', work_type: 'Shallow' }) });
       return fetch(`/api/ideas/${idea.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'Dieksekusi' }) });
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['ideas'] }); qc.invalidateQueries({ queryKey: ['tasks'] }); setConvertModal(null); },
@@ -132,7 +132,7 @@ export default function IdeasPage() {
 
       {/* Convert to task confirm */}
       <Dialog open={convertModal?.type === 'task'} onClose={() => setConvertModal(null)} title="→ Jadikan Task">
-        <p className="text-slate-300 text-sm mb-4">Ide "<strong>{convertModal?.idea?.title}</strong>" akan dijadikan Task dengan role {convertModal?.idea?.role} dan work type Admin.</p>
+        <p className="text-slate-300 text-sm mb-4">Ide "<strong>{convertModal?.idea?.title}</strong>" akan dijadikan Task dengan role {convertModal?.idea?.role} dan work type Shallow.</p>
         <div className="flex gap-2">
           <Button onClick={() => convertToTask.mutate(convertModal!.idea)} className="flex-1">Konfirmasi</Button>
           <Button variant="outline" onClick={() => setConvertModal(null)}>Batal</Button>

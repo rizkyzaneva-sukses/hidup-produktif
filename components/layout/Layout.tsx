@@ -61,7 +61,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     const NAV_MAP: Record<string, string> = {
       'nav-home': '/', 'nav-aktivitas': '/aktivitas', 'nav-rutinitas': '/rutinitas',
       'nav-focus': '/focus', 'nav-quran': '/quran',
-      'nav-inbox': '/inbox', 'nav-projects': '/proyek-belajar', 'nav-learning': '/proyek-belajar',
+      'nav-inbox': '/inbox', 'nav-projects': '/proyek-belajar',
       'nav-keuangan': '/keuangan',
     };
     const handler = (e: KeyboardEvent) => {

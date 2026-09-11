@@ -1,16 +1,16 @@
-export const ROLES = ['CEO', 'Suami', 'Ayah', 'Anak', 'Pelajar'];
+export const ROLES = ['CEO', 'Suami', 'Ayah', 'Anak', 'Person'];
 
 export const ROLE_CONFIG: Record<string, { color: string; bg: string; text: string; border: string; bgSoft: string; emoji: string }> = {
   CEO:     { color: 'blue',   bg: 'bg-blue-500',   text: 'text-blue-400',   border: 'border-blue-500/30',   bgSoft: 'bg-blue-500/10',   emoji: '💼' },
   Suami:   { color: 'pink',   bg: 'bg-pink-500',   text: 'text-pink-400',   border: 'border-pink-500/30',   bgSoft: 'bg-pink-500/10',   emoji: '💑' },
   Ayah:    { color: 'green',  bg: 'bg-green-500',  text: 'text-green-400',  border: 'border-green-500/30',  bgSoft: 'bg-green-500/10',  emoji: '👨‍👧‍👦' },
   Anak:    { color: 'purple', bg: 'bg-purple-500', text: 'text-purple-400', border: 'border-purple-500/30', bgSoft: 'bg-purple-500/10', emoji: '🤲' },
-  Pelajar: { color: 'amber',  bg: 'bg-amber-500',  text: 'text-amber-400',  border: 'border-amber-500/30',  bgSoft: 'bg-amber-500/10',  emoji: '📚' },
+  Person: { color: 'amber',  bg: 'bg-amber-500',  text: 'text-amber-400',  border: 'border-amber-500/30',  bgSoft: 'bg-amber-500/10',  emoji: '🧑' },
   Umum:    { color: 'slate',  bg: 'bg-slate-500',  text: 'text-slate-400',  border: 'border-slate-500/30',  bgSoft: 'bg-slate-500/10',  emoji: '📌' },
 };
 
 export const PRIORITIES = ['Tinggi', 'Sedang', 'Rendah'];
-export const WORK_TYPES = ['Deep Work', 'Admin', 'Shallow'];
+export const WORK_TYPES = ['Deep-Work', 'Shallow', 'Recovery', 'Batch-Chat'];
 export const IDEA_CATEGORIES = ['Bisnis', 'Produk', 'Maulana Farm', 'Keuangan', 'Personal', 'Random'];
 export const IDEA_STATUSES = ['Mentah', 'Diproses', 'Dieksekusi'];
 export const FREQUENCIES = ['Sekali', 'Harian', 'Mingguan', 'Bulanan'];
@@ -53,9 +53,10 @@ export const PRIORITY_COLORS: Record<string, string> = {
 };
 
 export const WORK_TYPE_COLORS: Record<string, string> = {
-  'Deep Work': 'bg-red-500/20 text-red-300',
-  Admin: 'bg-yellow-500/20 text-yellow-300',
-  Shallow: 'bg-green-500/20 text-green-300',
+  'Deep-Work': 'bg-red-500/20 text-red-300',
+  'Shallow': 'bg-green-500/20 text-green-300',
+  'Recovery': 'bg-blue-500/20 text-blue-300',
+  'Batch-Chat': 'bg-purple-500/20 text-purple-300',
 };
 
 export const DURATION_OPTIONS = ['30 menit', '1 jam', '1,5 jam', '2 jam'];

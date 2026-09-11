@@ -90,7 +90,7 @@ async function saveTask(title: string, notes?: string | null) {
       notes: notes || null,
       role: 'CEO',
       priority: 'Sedang',
-      workType: 'Admin',
+      workType: 'Shallow',
     },
   });
 }

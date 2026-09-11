@@ -38,8 +38,8 @@ export default function SprintContent() {
     const aCarry = carryoverIds.includes(a.id) ? 0 : 1;
     const bCarry = carryoverIds.includes(b.id) ? 0 : 1;
     if (aCarry !== bCarry) return aCarry - bCarry;
-    if (a.work_type === 'Deep Work' && b.work_type !== 'Deep Work') return -1;
-    if (b.work_type === 'Deep Work' && a.work_type !== 'Deep Work') return 1;
+    if (a.work_type === 'Deep-Work' && b.work_type !== 'Deep-Work') return -1;
+    if (b.work_type === 'Deep-Work' && a.work_type !== 'Deep-Work') return 1;
     const pri: Record<string, number> = { Tinggi: 0, Sedang: 1, Rendah: 2 };
     return (pri[a.priority] || 1) - (pri[b.priority] || 1);
   });
@@ -229,7 +229,7 @@ export default function SprintContent() {
             {/* Task selection */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm text-slate-400">3 Deep Work Tasks</label>
+                <label className="text-sm text-slate-400">3 Deep-Work Tasks</label>
                 {totalHours > 0 && (
                   <span className={`text-xs ${totalHours > 3 ? 'text-amber-400' : 'text-slate-500'}`}>
                     Total: {totalHours}j {totalHours > 3 && '!'}
