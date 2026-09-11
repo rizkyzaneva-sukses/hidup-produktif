@@ -4,7 +4,7 @@ import { format, addDays } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useState } from 'react';
 import Link from 'next/link';
-import { QUOTES, SHOLAT_TIMES, ROLE_CONFIG, ROLES } from '@/lib/constants';
+import { QUOTES, ROLE_CONFIG, ROLES } from '@/lib/constants';
 import { todayStr, getGreeting, getDailyQuote } from '@/lib/utils';
 import { getSurahByHalaman } from '@/lib/quran-data';
 import { Card, CardContent, ProgressBar, Badge } from '@/components/ui';
@@ -33,6 +33,7 @@ export default function HomePage() {
   const { data: reminders = [] } = useQuery({ queryKey: ['home-reminders'], queryFn: () => fetcher('/api/reminders') });
   const { data: quranLogsToday = [] } = useQuery({ queryKey: ['home-quran-today', today], queryFn: () => fetcher(`/api/quran-logs?date=${today}`) });
   const { data: quranLatestRaw = [] } = useQuery({ queryKey: ['home-quran-latest'], queryFn: () => fetcher('/api/quran-logs?limit=1') });
+  const { data: prayerData } = useQuery({ queryKey: ['prayer-times'], queryFn: () => fetcher('/api/prayer-times'), staleTime: 3600000 });
 
   const toggleTask = useMutation({
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
@@ -155,17 +156,19 @@ export default function HomePage() {
       <Card>
         <CardContent className="py-3 sm:py-4">
           <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-3">Sholat Cimahi</p>
-          <div className="grid grid-cols-5 gap-1.5 sm:gap-3">
-            {Object.entries(SHOLAT_TIMES).map(([name, time]) => {
-              const [h, m] = time.split(':').map(Number);
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-3">
+            {prayerData?.times ? Object.entries(prayerData.times).map(([name, time]) => {
+              const [h, m] = (time as string).split(':').map(Number);
               const isPast = now.getHours() > h || (now.getHours() === h && now.getMinutes() >= m);
               return (
                 <div key={name} className="text-center p-1.5 sm:p-2 rounded-lg bg-slate-800/50">
                   <p className={`text-xs font-medium ${isPast ? 'text-slate-600' : 'text-amber-400'}`}>{name}</p>
-                  <p className={`text-sm font-mono mt-0.5 ${isPast ? 'text-slate-600' : 'text-white font-semibold'}`}>{time}</p>
+                  <p className={`text-sm font-mono mt-0.5 ${isPast ? 'text-slate-600' : 'text-white font-semibold'}`}>{time as string}</p>
                 </div>
               );
-            })}
+            }) : (
+              <p className="text-xs text-slate-500 col-span-3 sm:col-span-6 text-center py-2">Memuat jam sholat...</p>
+            )}
           </div>
         </CardContent>
       </Card>

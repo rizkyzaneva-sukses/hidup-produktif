@@ -3,6 +3,7 @@ import { sendTelegram, formatRupiah } from './telegram';
 
 let cronStarted = false;
 let lastRunDate = '';
+let lastPrayerRunDate = '';
 
 export function startCron() {
   if (cronStarted) return;
@@ -18,8 +19,9 @@ export function startCron() {
     cron.schedule('* * * * *', async () => {
       try {
         await checkAndRunNotifications();
+        await checkAndFetchPrayerTimes();
       } catch (e) {
-        console.error('[Cron] Error in notification check:', e);
+        console.error('[Cron] Error in cron check:', e);
       }
     });
 
@@ -118,4 +120,61 @@ export async function runDailyNotifications(): Promise<string[]> {
   }
 
   return messages;
+}
+
+// ── Prayer Times Auto-Fetch ──────────────────────────────────────────────────
+const LAT = -6.8896;
+const LNG = 107.5448;
+const METHOD = 11; // Kemenag RI
+
+async function checkAndFetchPrayerTimes() {
+  try {
+    const now = new Date();
+    const wibOffset = 7 * 60;
+    const wibTime = new Date(now.getTime() + (wibOffset + now.getTimezoneOffset()) * 60000);
+    const currentHour = wibTime.getHours().toString().padStart(2, '0');
+    const currentMinute = wibTime.getMinutes().toString().padStart(2, '0');
+    const currentTime = `${currentHour}:${currentMinute}`;
+    const currentDate = wibTime.toISOString().split('T')[0];
+
+    // Fetch at 00:00 WIB once per day
+    if (currentTime === '00:00' && lastPrayerRunDate !== currentDate) {
+      lastPrayerRunDate = currentDate;
+      console.log(`[Cron] Fetching prayer times for ${currentDate}`);
+
+      const dateRow = await prisma.appConfig.findUnique({ where: { key: 'PRAYER_TIMES_DATE' } });
+      if (dateRow?.value === currentDate) return; // already cached
+
+      const url = `https://api.aladhan.com/v1/timings/${currentDate}?latitude=${LAT}&longitude=${LNG}&method=${METHOD}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Aladhan API error: ${res.status}`);
+
+      const json = await res.json();
+      const t = json.data.timings;
+
+      const times = {
+        Subuh: t.Fajr.substring(0, 5),
+        Terbit: t.Sunrise.substring(0, 5),
+        Zuhur: t.Dhuhr.substring(0, 5),
+        Asar: t.Asr.substring(0, 5),
+        Magrib: t.Maghrib.substring(0, 5),
+        Isya: t.Isha.substring(0, 5),
+      };
+
+      await prisma.appConfig.upsert({
+        where: { key: 'PRAYER_TIMES_DATE' },
+        update: { value: currentDate },
+        create: { key: 'PRAYER_TIMES_DATE', value: currentDate },
+      });
+      await prisma.appConfig.upsert({
+        where: { key: 'PRAYER_TIMES_DATA' },
+        update: { value: JSON.stringify(times) },
+        create: { key: 'PRAYER_TIMES_DATA', value: JSON.stringify(times) },
+      });
+
+      console.log(`[Cron] Prayer times cached:`, times);
+    }
+  } catch (e) {
+    console.error('[Cron] Prayer times fetch error:', e);
+  }
 }
