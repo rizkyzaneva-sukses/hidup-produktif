@@ -127,6 +127,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
   const insertFromOpts = (opt: string) => {
     if (dropdown === 'role') insertTag(`@${opt.toLowerCase()}`);
     else if (dropdown === 'cat') insertTag(`#${opt.toLowerCase().replace(' ', '')}`);
+    else if (dropdown === 'worktype') insertTag(`$${opt.toLowerCase().replace(/\s/g, '')}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
