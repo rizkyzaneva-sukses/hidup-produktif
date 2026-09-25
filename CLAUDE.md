@@ -12,16 +12,16 @@
 ```
 app/
   api/          ← API routes (Next.js Route Handlers)
-  sprint/       ← Daily Sprint
-  habits/       ← Habit tracker
+  sprint/       ← Daily Sprint (multi-task, add/remove slot)
+  rutinitas/    ← Habit tracker + Habit Heatmap (30 hari)
   tasks/        ← Task manager
   projects/     ← Project tracker
   ideas/        ← Idea capture
   learning/     ← Learning log
   reminders/    ← Reminder
   subscriptions/← Subscription tracker
-  laporan/      ← Laporan & weekly review
-  focus/        ← Focus mode (Pomodoro)
+  laporan/      ← Laporan, tren & weekly review
+  quran/        ← Quran log
   settings/     ← Settings & custom roles
   role/[slug]/  ← View task per role
 lib/
@@ -30,7 +30,7 @@ lib/
   prisma.ts     ← Prisma client singleton
 prisma/
   schema.prisma ← Database schema
-  migrations/   ← SQL migrations (manual, bukan prisma migrate)
+  migrations/   ← SQL migrations
 ```
 
 ## Konvensi Database

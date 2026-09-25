@@ -14,7 +14,6 @@ export const WORK_TYPES = ['Deep-Work', 'Shallow', 'Recovery', 'Batch-Chat'];
 export const IDEA_CATEGORIES = ['Bisnis', 'Produk', 'Maulana Farm', 'Keuangan', 'Personal', 'Random'];
 export const IDEA_STATUSES = ['Mentah', 'Diproses', 'Dieksekusi'];
 export const FREQUENCIES = ['Sekali', 'Harian', 'Mingguan', 'Bulanan'];
-export const MOODS = ['Sangat Baik', 'Baik', 'Netral', 'Kurang Baik', 'Buruk'];
 export const LEARNING_TYPES = ['Buku', 'Podcast', 'Video', 'Artikel'];
 export const PROJECT_STATUSES = ['Aktif', 'Selesai', 'Ditunda'];
 export const SUB_CATEGORIES = ['Software', 'Ecourse'];

@@ -26,6 +26,16 @@ export default function SprintContent() {
   const [showEod, setShowEod] = useState(false);
   const [editing, setEditing] = useState(false);
 
+  const MAX_SLOTS = 12;
+
+  const addSlot = () => {
+    if (selectedTasks.length >= MAX_SLOTS) return;
+    setSelectedTasks(prev => [...prev, { task_id: '', task_title: '', duration: '1 jam' }]);
+  };
+  const removeSlot = (i: number) => {
+    setSelectedTasks(prev => (prev.length <= 1 ? prev : prev.filter((_, idx) => idx !== i)));
+  };
+
   const { data: todaySprint } = useQuery({ queryKey: ['sprint', today], queryFn: () => fetcher(`/api/sprints?date=${today}`) });
   const { data: yesterdaySprint } = useQuery({ queryKey: ['sprint', yesterday], queryFn: () => fetcher(`/api/sprints?date=${yesterday}`) });
   const { data: allTasks = [] } = useQuery({ queryKey: ['tasks-sprint'], queryFn: () => fetcher('/api/tasks?completed=false') });
@@ -50,6 +60,17 @@ export default function SprintContent() {
       setSelectedTasks(suggestions.map((t: any) => ({ task_id: t.id, task_title: t.title, duration: '1 jam' })));
     }
   }, [todaySprint, sortedTasks.length]);
+
+  // Load existing sprint tasks when entering edit mode
+  useEffect(() => {
+    if (editing && todaySprint?.tasks?.length) {
+      setSelectedTasks(todaySprint.tasks.map((t: any) => ({
+        task_id: t.task_id, task_title: t.task_title, duration: t.duration || '1 jam',
+      })));
+      setEnergy(todaySprint.energy_level || 3);
+      setIntention(todaySprint.intention || '');
+    }
+  }, [editing, todaySprint?.id]);
 
   const saveSprint = useMutation({
     mutationFn: async () => {
@@ -229,7 +250,7 @@ export default function SprintContent() {
             {/* Task selection */}
             <div className="mb-5">
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm text-slate-400">3 Deep-Work Tasks</label>
+                <label className="text-sm text-slate-400">Task Sprint</label>
                 {totalHours > 0 && (
                   <span className={`text-xs ${totalHours > 3 ? 'text-amber-400' : 'text-slate-500'}`}>
                     Total: {totalHours}j {totalHours > 3 && '!'}
@@ -259,9 +280,19 @@ export default function SprintContent() {
                       className="w-24 h-9 px-2 rounded-lg bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-colors">
                       {DURATION_OPTIONS.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
+                    {selectedTasks.length > 1 && (
+                      <button type="button" onClick={() => removeSlot(i)} title="Hapus baris"
+                        className="w-9 h-9 shrink-0 rounded-lg border border-slate-700 text-slate-500 hover:text-red-400 hover:border-red-500/40 transition-colors flex items-center justify-center">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l8 8M11 3l-8 8"/></svg>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
+              <button type="button" onClick={addSlot} disabled={selectedTasks.length >= MAX_SLOTS}
+                className="mt-2 w-full h-9 rounded-lg border border-dashed border-slate-700 text-slate-400 hover:text-blue-400 hover:border-blue-500/40 text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                + Tambah Task {selectedTasks.length >= MAX_SLOTS ? `(max ${MAX_SLOTS})` : ''}
+              </button>
             </div>
 
             <Button onClick={() => saveSprint.mutate()} className="w-full" disabled={saveSprint.isPending}>

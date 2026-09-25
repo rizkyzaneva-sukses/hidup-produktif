@@ -220,20 +220,6 @@ model TimeLog {
   @@map("time_logs")
 }
 
-model FocusSession {
-  id              String   @id @default(cuid())
-  taskId          String?  @map("task_id")
-  mode            String   @default("Pomodoro")
-  startTime       DateTime @map("start_time")
-  endTime         DateTime? @map("end_time")
-  durationMinutes Int      @map("duration_minutes")
-  completed       Boolean  @default(true)
-  date            String
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  @@map("focus_sessions")
-}
-
 model WeeklyGoal {
   id        String   @id @default(cuid())
   weekStart String   @map("week_start")
@@ -257,19 +243,6 @@ model TaskTemplate {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("task_templates")
-}
-
-model MoodLog {
-  id           String   @id @default(cuid())
-  date         String
-  hour         Int
-  energyLevel  Int      @default(3) @map("energy_level")
-  mood         String   @default("Netral")
-  notes        String?
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  @@unique([date, hour])
-  @@map("mood_logs")
 }
 
 model QuarterlyGoal {

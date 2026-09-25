@@ -56,23 +56,8 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    // Total focus session minutes
-    const focusAgg = await prisma.focusSession.aggregate({
-      where: {
-        date: { gte: start, lte: end },
-      },
-      _sum: { durationMinutes: true },
-    });
-    const focusMinutes = focusAgg._sum.durationMinutes || 0;
-
-    // Mood average (energy level)
-    const moodAgg = await prisma.moodLog.aggregate({
-      where: {
-        date: { gte: start, lte: end },
-      },
-      _avg: { energyLevel: true },
-    });
-    const moodAverage = moodAgg._avg.energyLevel ? Math.round(moodAgg._avg.energyLevel * 10) / 10 : null;
+    // Unprocessed ideas (for idea backlog score)
+    const mentahIdeas = await prisma.idea.count({ where: { status: 'Mentah' } });
 
     // Habit completion rate
     const totalHabits = await prisma.habit.count({ where: { active: true } });
@@ -122,13 +107,12 @@ export async function GET(req: NextRequest) {
       streaks[habit.label] = streak;
     }
 
-    // Productivity score (weighted: tasks 40%, focus 30%, mood 15%, habits 15%)
+    // Productivity score (weighted: tasks 50%, habits 30%, ideas 20%)
     const taskScore = tasksCreated > 0 ? Math.min(100, (tasksCompleted / Math.max(tasksCreated, 1)) * 100) : 50;
-    const focusScore = Math.min(100, (focusMinutes / (8 * 60)) * 100); // 8 hours target
-    const moodScore = moodAverage ? (moodAverage / 5) * 100 : 50;
     const habitScore = habitCompletionRate;
+    const ideaScore = mentahIdeas > 0 ? Math.max(0, 100 - mentahIdeas * 20) : 100;
     const productivityScore = Math.round(
-      taskScore * 0.4 + focusScore * 0.3 + moodScore * 0.15 + habitScore * 0.15
+      taskScore * 0.5 + habitScore * 0.3 + ideaScore * 0.2
     );
 
     // Role breakdown
@@ -176,8 +160,7 @@ export async function GET(req: NextRequest) {
       date_end: end,
       tasks_completed: tasksCompleted,
       tasks_created: tasksCreated,
-      focus_minutes: focusMinutes,
-      mood_average: moodAverage,
+      ideas_mentah: mentahIdeas,
       habit_completion_rate: habitCompletionRate,
       streaks,
       productivity_score: Math.min(100, Math.max(0, productivityScore)),

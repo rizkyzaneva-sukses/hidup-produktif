@@ -93,22 +93,21 @@ const FEATURES: Feature[] = [
     ],
   },
   {
-    id: 'focus',
-    emoji: '⏱',
-    title: 'Focus Mode',
+    id: 'habit-heatmap',
+    emoji: '🗓',
+    title: 'Habit Heatmap',
     category: 'core',
-    description: 'Pomodoro timer: 25 menit fokus → 5 menit istirahat → 15 menit long break. Sesi fokus tersimpan otomatis ke database.',
+    description: 'Visualisasi konsistensi kebiasaan 30 hari terakhir dalam bentuk heatmap. Semakin hijau, semakin konsisten kamu.',
     actions: [
-      'Pilih mode: Pomodoro (25m), Short Break (5m), atau Long Break (15m)',
-      'Pilih task yang akan dikerjakan (opsional)',
-      'Mulai timer dan fokus tanpa gangguan',
-      'Saat timer selesai, pilih istirahat atau lanjut',
-      'Break reminder akan muncul setelah sesi fokus',
+      'Buka halaman Rutinitas — heatmap ada di bawah daftar habit',
+      'Lihat kotak per hari: warna makin hijau = makin banyak habit selesai',
+      'Cek statistik: hari ini, streak terpanjang, dan persentase bulan ini',
+      'Lihat breakdown per habit untuk tahu mana yang perlu ditingkatkan',
     ],
     tips: [
-      'Tautkan task saat fokus untuk tracking otomatis',
-      'Ikuti siklus: 4 pomodoro → long break',
-      'Break reminder menjaga kesehatan mata dan tubuh',
+      'Heatmap membantu melihat pola konsistensi jangka panjang',
+      'Target jaga kotak tetap hijau — jangan bolong di tengah',
+      'Gunakan streak goal per habit untuk motivasi tambahan',
     ],
   },
 
@@ -269,23 +268,6 @@ const FEATURES: Feature[] = [
     ],
   },
   {
-    id: 'focus-db-sync',
-    emoji: '🔄',
-    title: 'Focus → DB Sync',
-    category: 'baru',
-    description: 'Sesi Pomodoro otomatis tersimpan ke database. Riwayat fokus lengkap untuk analisis produktivitas.',
-    actions: [
-      'Jalankan Focus Mode seperti biasa',
-      'Setiap selesai sesi, data otomatis tersimpan',
-      'Lihat history di Laporan atau Analytics',
-      'Gunakan untuk evaluasi pola fokus',
-    ],
-    tips: [
-      'Tautkan task saat fokus untuk data lebih kaya',
-      'Data ini membantu temukan jam-jam produktif',
-    ],
-  },
-  {
     id: 'task-templates',
     emoji: '📋',
     title: 'Task Templates',
@@ -337,54 +319,38 @@ const FEATURES: Feature[] = [
     ],
   },
   {
-    id: 'analytics',
-    emoji: '📈',
-    title: 'Dashboard Analytics',
+    id: 'sprint-multitask',
+    emoji: '🧩',
+    title: 'Sprint Multi-Task',
+    category: 'baru',
+    description: 'Tambah task sprint sebanyak yang kamu butuhkan — tidak dibatasi 3. Susun rencana harian sesuai beban kerja nyata.',
+    actions: [
+      'Buka halaman Daily Sprint',
+      'Klik tombol "+ Tambah Task" untuk menambah baris task',
+      'Klik ikon ✕ di baris untuk menghapus task dari rencana',
+      'Total durasi otomatis terhitung — hati-hati kalau lebih dari 3 jam',
+    ],
+    tips: [
+      'Fokus pada task Deep-Work dulu, baru yang ringan',
+      'Jangan terlalu banyak — lebih baik realistis dan selesai',
+      'Label durasi membantu menjaga beban harian tetap wajar',
+    ],
+  },
+  {
+    id: 'laporan',
+    emoji: '📊',
+    title: 'Laporan & Analitik',
     category: 'baru',
     description: 'Skor produktivitas, tren mingguan, dan breakdown per role. Gambaran data-driven tentang hidup Anda.',
     actions: [
-      'Buka halaman Analytics dari menu',
+      'Buka halaman Laporan dari sidebar',
       'Lihat productivity score (0-100)',
-      'Analisis tren: task completion, habit rate, fokus time',
+      'Analisis tren: task completion, habit rate, ide mentah',
       'Breakdown per role untuk seimbangkan hidup',
     ],
     tips: [
-      'Productivity score = task (40%) + focus (30%) + mood (15%) + habits (15%)',
+      'Productivity score = task (50%) + habits (30%) + ide (20%)',
       'Update data secara konsisten untuk hasil akurat',
-    ],
-  },
-  {
-    id: 'mood-energy',
-    emoji: '😊',
-    title: 'Mood & Energy Tracker',
-    category: 'baru',
-    description: 'Log mood dan energy setiap jam. Lihat heatmap untuk temukan jam paling produktif.',
-    actions: [
-      'Buka halaman Mood dari menu',
-      'Log mood (1-5) dan energy level setiap jam',
-      'Lihat heatmap: warna gelap = energi tinggi',
-      'Analisis pola: jam mana produktif, jam mana perlu istirahat',
-    ],
-    tips: [
-      'Log minimal 3x sehari untuk data bermakna',
-      'Gunakan data untuk scheduling task penting di jam produktif',
-    ],
-  },
-  {
-    id: 'break-reminder',
-    emoji: '☕',
-    title: 'Break Reminder',
-    category: 'baru',
-    description: 'Saran istirahat otomatis setelah sesi fokus. Jaga kesehatan mata, punggung, dan produktivitas.',
-    actions: [
-      'Saat selesai sesi Pomodoro, banner break muncul',
-      'Klik untuk mulai istirahat (Short Break atau Long Break)',
-      'Tips kesehatan ditampilkan saat break',
-      'Atur preferensi di Focus Mode settings',
-    ],
-    tips: [
-      'Ikuti saran break — jangan skip untuk produktivitas jangka panjang',
-      'Gunakan long break untuk stretching atau jalan kaki',
     ],
   },
   {
@@ -425,11 +391,11 @@ const TIPS = [
   { emoji: '🌅', text: 'Mulai setiap hari dengan Daily Sprint — rencanakan & niatkan harimu' },
   { emoji: '🌙', text: 'Akhiri hari dengan EOD Review — refleksi & evaluasi' },
   { emoji: '🔥', text: 'Set habit streak goals untuk motivasi — target 21 hari' },
-  { emoji: '😊', text: 'Gunakan Mood Tracker untuk temukan jam paling produktif' },
+  { emoji: '🗓', text: 'Pantau Habit Heatmap di halaman Rutinitas — jaga konsistensi tetap hijau' },
   { emoji: '📥', text: 'Batch import untuk input task cepat dari meeting' },
   { emoji: '🔁', text: 'Recurring tasks untuk rutinitas — hemat waktu' },
+  { emoji: '🧩', text: 'Tambah task sprint sesuai beban kerja — tidak terbatas 3 task' },
   { emoji: '🎯', text: 'Weekly Goals menjaga fokus per role' },
-  { emoji: '☕', text: 'Jangan skip break reminder — kesehatan > produktivitas' },
 ];
 
 // ─── Collapsible Feature Card ─────────────────────────────────────────────────
@@ -546,7 +512,7 @@ export default function PanduanPage() {
       <div className="px-4 pb-3 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <Input
-            placeholder="🔍  Cari fitur... (contoh: habit, pomodoro, import)"
+            placeholder="🔍  Cari fitur... (contoh: habit, sprint, import)"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -655,11 +621,10 @@ export default function PanduanPage() {
               { emoji: '🏠', label: 'Beranda', href: '/' },
               { emoji: '🎯', label: 'Sprint', href: '/sprint' },
               { emoji: '✅', label: 'Tasks', href: '/tasks' },
-              { emoji: '🌟', label: 'Habits', href: '/habits' },
-              { emoji: '⏱', label: 'Focus', href: '/focus' },
+              { emoji: '🌟', label: 'Rutinitas', href: '/rutinitas' },
+              { emoji: '📖', label: 'Quran', href: '/quran' },
               { emoji: '💡', label: 'Ide', href: '/ideas' },
               { emoji: '📊', label: 'Laporan', href: '/laporan' },
-              { emoji: '📈', label: 'Analytics', href: '/analytics' },
             ].map(item => (
               <a
                 key={item.href}

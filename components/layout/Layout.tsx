@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { QuickCaptureFAB } from '@/components/shared/QuickCaptureFAB';
 import { getEffectiveKey, matchesKeyCombo } from '@/lib/shortcuts';
 import {
-  Home, Target, Flame, Timer,
+  Home, Target, Flame,
   FolderKanban, BookOpen, Bell, CreditCard, BarChart3,
   BookMarked, Settings, LogOut,
   PanelLeftClose, PanelLeftOpen, X,
@@ -17,8 +17,8 @@ const NAV_MAIN = [
   { href: '/', icon: Home, label: 'Beranda' },
   { href: '/aktivitas', icon: Target, label: 'Aktivitas' },
   { href: '/rutinitas', icon: Flame, label: 'Rutinitas' },
-  { href: '/focus', icon: Timer, label: 'Focus' },
   { href: '/quran', icon: BookOpen, label: 'Quran' },
+  { href: '/laporan', icon: BarChart3, label: 'Laporan' },
 ];
 const NAV_KELOLA = [
   { href: '/inbox', icon: Bell, label: 'Inbox' },
@@ -30,7 +30,7 @@ const BOTTOM_NAV = [
   { href: '/', icon: Home, label: 'Home' },
   { href: '/aktivitas', icon: Target, label: 'Aktivitas' },
   { href: '/rutinitas', icon: Flame, label: 'Rutinitas' },
-  { href: '/focus', icon: Timer, label: 'Focus' },
+  { href: '/quran', icon: BookOpen, label: 'Quran' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -60,7 +60,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const NAV_MAP: Record<string, string> = {
       'nav-home': '/', 'nav-aktivitas': '/aktivitas', 'nav-rutinitas': '/rutinitas',
-      'nav-focus': '/focus', 'nav-quran': '/quran',
+      'nav-quran': '/quran', 'nav-laporan': '/laporan',
       'nav-inbox': '/inbox', 'nav-projects': '/proyek-belajar',
       'nav-keuangan': '/keuangan',
     };
