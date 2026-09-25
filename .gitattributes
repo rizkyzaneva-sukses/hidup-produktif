@@ -1,0 +1,8 @@
+# Normalize line endings — shell scripts MUST be LF for Docker/Linux
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.sql text eol=lf
+
+# Windows scripts keep CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
