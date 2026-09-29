@@ -19,12 +19,16 @@ export const PROJECT_STATUSES = ['Aktif', 'Selesai', 'Ditunda'];
 export const SUB_CATEGORIES = ['Software', 'Ecourse'];
 
 export const DEFAULT_HABITS = [
-  { label: 'Sholat 5 Waktu', emoji: '🕌', pinned: true, sort_order: 0 },
-  { label: 'Olahraga 30 mnt', emoji: '💪', pinned: false, sort_order: 1 },
-  { label: 'Baca 10 halaman', emoji: '📖', pinned: false, sort_order: 2 },
-  { label: 'Pesan ke Istri', emoji: '💌', pinned: false, sort_order: 3 },
-  { label: 'Minum 8 gelas air', emoji: '💧', pinned: false, sort_order: 4 },
-  { label: 'Tidur sebelum 23:00', emoji: '🛏️', pinned: false, sort_order: 5 },
+  { label: 'Sholat Berjamaah Shubuh', emoji: '🕌', pinned: true, sort_order: 0 },
+  { label: 'Sholat Berjamaah Dzuhur', emoji: '🕌', pinned: false, sort_order: 1 },
+  { label: 'Sholat Berjamaah Ashar', emoji: '🕌', pinned: false, sort_order: 2 },
+  { label: 'Sholat Berjamaah Maghrib', emoji: '🕌', pinned: false, sort_order: 3 },
+  { label: 'Sholat Berjamaah Isya', emoji: '🕌', pinned: false, sort_order: 4 },
+  { label: 'Olahraga 30 mnt', emoji: '💪', pinned: false, sort_order: 5 },
+  { label: 'Baca 10 halaman', emoji: '📖', pinned: false, sort_order: 6 },
+  { label: 'Pesan ke Istri', emoji: '💌', pinned: false, sort_order: 7 },
+  { label: 'Minum 8 gelas air', emoji: '💧', pinned: false, sort_order: 8 },
+  { label: 'Tidur sebelum 23:00', emoji: '🛏️', pinned: false, sort_order: 9 },
 ];
 
 export const QUOTES = [
