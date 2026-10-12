@@ -120,13 +120,15 @@ const FEATURES: Feature[] = [
     description: 'Tangkap ide cepat sebelum hilang. Ubah menjadi task atau proyek saat waktunya tepat.',
     actions: [
       'Klik tombol FAB (bulat kanan bawah) untuk quick capture',
-      'Tulis ide singkat — judul + catatan opsional',
+      'Tulis ide singkat — tambah @role, #kategori, !p1-p4 (prioritas), $jenis',
+      'Filter ide berdasarkan Status, Prioritas (P1-P4), Peran, dan Kategori',
       'Ubah ide menjadi task atau proyek kapan saja',
       'Arsipkan ide yang sudah terealisasi',
     ],
     tips: [
       'Gunakan Ctrl+Q untuk quick capture dari mana saja',
-      'Ideal untuk ide spontan saat sholat atau jalan',
+      'Prioritas: !p1 (Urgent), !p2 (Tinggi), !p3 (Normal), !p4 (Rendah)',
+      'Ide dari Telegram otomatis masuk kategori "Telegram" dan bisa difilter',
     ],
   },
   {

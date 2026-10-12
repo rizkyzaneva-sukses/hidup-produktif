@@ -1,14 +1,14 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ROLES, IDEA_CATEGORIES, WORK_TYPES } from '@/lib/constants';
+import { ROLES, IDEA_CATEGORIES, WORK_TYPES, IDEA_PRIORITIES } from '@/lib/constants';
 import { Button, Input } from '@/components/ui';
 
 const ROLE_MAP: Record<string, string> = {
   ceo: 'CEO', suami: 'Suami', ayah: 'Ayah', anak: 'Anak', person: 'Person', umum: 'Umum',
 };
 const CAT_MAP: Record<string, string> = {
-  bisnis: 'Bisnis', produk: 'Produk', farm: 'Maulana Farm', keuangan: 'Keuangan', personal: 'Personal', random: 'Random',
+  bisnis: 'Bisnis', produk: 'Produk', farm: 'Maulana Farm', keuangan: 'Keuangan', personal: 'Personal', random: 'Random', telegram: 'Telegram',
 };
 
 function parseInput(raw: string) {
@@ -16,9 +16,11 @@ function parseInput(raw: string) {
   let role = 'Umum';
   let category = 'Random';
   let workType = '';
+  let priority = '';
   const roleMatch = raw.match(/@(\w+)/);
   const catMatch = raw.match(/#(\w+)/);
   const wtMatch = raw.match(/\$([\w-]+)/);
+  const prioMatch = raw.match(/!(p[1-4])/i);
   if (roleMatch) {
     role = ROLE_MAP[roleMatch[1].toLowerCase()] || 'Umum';
     title = title.replace(roleMatch[0], '').trim();
@@ -32,7 +34,12 @@ function parseInput(raw: string) {
     if (matched) workType = matched;
     title = title.replace(wtMatch[0], '').trim();
   }
-  return { title: title.trim(), role, category, workType };
+  if (prioMatch) {
+    const p = prioMatch[1].toUpperCase();
+    if (IDEA_PRIORITIES.includes(p)) priority = p;
+    title = title.replace(prioMatch[0], '').trim();
+  }
+  return { title: title.trim(), role, category, workType, priority };
 }
 
 export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }) {
@@ -41,7 +48,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
   const [input, setInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [dropdown, setDropdown] = useState<'role' | 'cat' | 'worktype' | null>(null);
+  const [dropdown, setDropdown] = useState<'role' | 'cat' | 'worktype' | 'prio' | null>(null);
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -66,6 +73,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
     if (last.startsWith('@')) { setDropdown('role'); setHighlight(0); }
     else if (last.startsWith('#')) { setDropdown('cat'); setHighlight(0); }
     else if (last.startsWith('$')) { setDropdown('worktype'); setHighlight(0); }
+    else if (last.startsWith('!')) { setDropdown('prio'); setHighlight(0); }
     else { setDropdown(null); setHighlight(0); }
   };
 
@@ -83,21 +91,26 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
       const q = last.startsWith('$') ? last.slice(1).toLowerCase() : '';
       return WORK_TYPES.filter(w => !q || w.toLowerCase().replace(/\s/g, '').startsWith(q));
     }
+    if (dropdown === 'prio') {
+      const q = last.startsWith('!') ? last.slice(1).toLowerCase() : '';
+      return IDEA_PRIORITIES.filter(p => !q || p.toLowerCase().startsWith(q));
+    }
     return [];
   };
 
   const currentOpts = getOpts();
 
   const handleSave = async () => {
-    const { title, role, category, workType } = parseInput(input);
+    const { title, role, category, workType, priority } = parseInput(input);
     if (!title) return;
     setSaving(true);
     if (workType) {
       // Ada $jenis → langsung buat Task
+      const taskPriority = priority === 'P1' ? 'Tinggi' : priority === 'P4' ? 'Rendah' : 'Sedang';
       await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, role: role === 'Umum' ? 'CEO' : role, priority: 'Sedang', work_type: workType }),
+        body: JSON.stringify({ title, role: role === 'Umum' ? 'CEO' : role, priority: taskPriority, work_type: workType }),
       });
       qc.invalidateQueries({ queryKey: ['tasks'] });
     } else {
@@ -105,7 +118,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
       await fetch('/api/ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, role, category, status: 'Mentah' }),
+        body: JSON.stringify({ title, role, category, priority: priority || 'P3', status: 'Mentah' }),
       });
       qc.invalidateQueries({ queryKey: ['ideas'] });
     }
@@ -128,6 +141,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
     if (dropdown === 'role') insertTag(`@${opt.toLowerCase()}`);
     else if (dropdown === 'cat') insertTag(`#${opt.toLowerCase().replace(' ', '')}`);
     else if (dropdown === 'worktype') insertTag(`$${opt.toLowerCase().replace(/\s/g, '')}`);
+    else if (dropdown === 'prio') insertTag(`!${opt.toLowerCase()}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -187,7 +201,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
                 value={input}
                 onChange={e => handleChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Tulis ide... @role #kategori $jenis"
+                placeholder="Tulis ide... @role #kategori $jenis !prioritas"
                 className="pr-16"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-600 hidden sm:inline">Enter ↵</span>
@@ -203,7 +217,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
                       idx === highlight ? 'bg-blue-600/20 text-white' : 'text-slate-300 hover:bg-slate-800'
                     }`}
                   >
-                    {dropdown === 'role' ? '@' : dropdown === 'worktype' ? '$' : '#'}{opt.toLowerCase().replace(' ', '')}
+                    {dropdown === 'role' ? '@' : dropdown === 'worktype' ? '$' : dropdown === 'prio' ? '!' : '#'}{opt.toLowerCase().replace(' ', '')}
                   </button>
                 ))}
               </div>
@@ -215,7 +229,7 @@ export function QuickCaptureFAB({ customRoles = [] }: { customRoles?: string[] }
               </Button>
               <Button variant="outline" onClick={() => setOpen(false)}>Batal</Button>
             </div>
-            <p className="text-xs text-slate-600 mt-2 text-center">@role #kategori $jenis opsional — $ jenis = bikin Task langsung</p>
+            <p className="text-xs text-slate-600 mt-2 text-center">@role #kategori !p1-p4 $jenis opsional — $ jenis = bikin Task langsung</p>
           </div>
         </div>
       )}

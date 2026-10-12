@@ -11,8 +11,16 @@ export const ROLE_CONFIG: Record<string, { color: string; bg: string; text: stri
 
 export const PRIORITIES = ['Tinggi', 'Sedang', 'Rendah'];
 export const WORK_TYPES = ['Deep-Work', 'Shallow', 'Recovery', 'Batch-Chat'];
-export const IDEA_CATEGORIES = ['Bisnis', 'Produk', 'Maulana Farm', 'Keuangan', 'Personal', 'Random'];
+export const IDEA_CATEGORIES = ['Bisnis', 'Produk', 'Maulana Farm', 'Keuangan', 'Personal', 'Random', 'Telegram'];
 export const IDEA_STATUSES = ['Mentah', 'Diproses', 'Dieksekusi'];
+// Prioritas ide (P1 tertinggi → P4 terendah). Default P3.
+export const IDEA_PRIORITIES = ['P1', 'P2', 'P3', 'P4'];
+export const IDEA_PRIORITY_COLORS: Record<string, { text: string; bg: string; border: string; dot: string; label: string }> = {
+  P1: { text: 'text-red-300',    bg: 'bg-red-500/15',    border: 'border-red-500/40',    dot: 'bg-red-400',    label: 'P1 · Urgent' },
+  P2: { text: 'text-amber-300',  bg: 'bg-amber-500/15',  border: 'border-amber-500/40',  dot: 'bg-amber-400',  label: 'P2 · Tinggi' },
+  P3: { text: 'text-slate-300',  bg: 'bg-slate-500/15',  border: 'border-slate-500/40',  dot: 'bg-slate-400',  label: 'P3 · Normal' },
+  P4: { text: 'text-slate-400',  bg: 'bg-slate-700/40',  border: 'border-slate-700/50',  dot: 'bg-slate-600',  label: 'P4 · Rendah' },
+};
 export const FREQUENCIES = ['Sekali', 'Harian', 'Mingguan', 'Bulanan'];
 export const LEARNING_TYPES = ['Buku', 'Podcast', 'Video', 'Artikel'];
 export const PROJECT_STATUSES = ['Aktif', 'Selesai', 'Ditunda'];

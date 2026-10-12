@@ -93,6 +93,7 @@ model Idea {
   description String?
   role        String   @default("Umum")
   category    String   @default("Random")
+  priority    String   @default("P3")
   status      String   @default("Mentah")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

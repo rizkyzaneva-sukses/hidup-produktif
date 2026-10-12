@@ -10,6 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.description !== undefined) data.description = body.description;
     if (body.role !== undefined) data.role = body.role;
     if (body.category !== undefined) data.category = body.category;
+    if (body.priority !== undefined) data.priority = body.priority;
     if (body.status !== undefined) data.status = body.status;
     
     const idea = await prisma.idea.update({

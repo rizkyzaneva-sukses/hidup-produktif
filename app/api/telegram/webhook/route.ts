@@ -72,12 +72,20 @@ async function transcribeAudio(audioBuffer: Buffer): Promise<string | null> {
 // === SAVE FUNCTIONS ===
 
 async function saveIdea(title: string, description?: string | null) {
+  // Deteksi tag prioritas !p1..!p4 di judul (mis. "Beli domain !p1")
+  let priority = 'P3';
+  const prioMatch = title.match(/!(p[1-4])/i);
+  if (prioMatch) {
+    priority = prioMatch[1].toUpperCase();
+    title = title.replace(prioMatch[0], '').replace(/\s{2,}/g, ' ').trim();
+  }
   return prisma.idea.create({
     data: {
       title,
       description: description || null,
       role: 'Umum',
       category: 'Telegram',
+      priority,
       status: 'Mentah',
     },
   });
@@ -162,7 +170,7 @@ export async function POST(req: NextRequest) {
         msg.chat.id,
         `✅ <b>Voice note tersimpan sebagai ide!</b>\n\n` +
           `🎙️ <i>"${text}"</i>\n\n` +
-          `📂 Kategori: Telegram\n🏷 Status: Mentah\n\n` +
+          `📂 Kategori: Telegram\n🏷 Prioritas: ${idea.priority}\n🏷 Status: Mentah\n\n` +
           `👉 <a href="https://produktifmax.maulanacorp.my.id/ideas">Lihat di Dashboard</a>`,
         messageId
       );
@@ -190,6 +198,7 @@ export async function POST(req: NextRequest) {
           `• <code>/ide Judul</code> — tambah ide\n` +
           `• <code>/ide Judul | Deskripsi</code> — ide + deskripsi\n\n` +
           `💡 Ketik langsung tanpa / → otomatis jadi ide\n` +
+          `🔢 Tambah <code>!p1</code>/<code>!p2</code>/<code>!p3</code>/<code>!p4</code> di judul untuk prioritas\n` +
           `🎙️ Voice note → transkripsi & simpan sebagai ide`,
         messageId
       );
@@ -296,7 +305,7 @@ export async function POST(req: NextRequest) {
         `✅ <b>Ide tersimpan!</b>\n\n` +
           `💡 ${idea.title}` +
           descLine +
-          `\n\n📂 Kategori: Telegram\n🏷 Status: Mentah\n\n` +
+          `\n\n📂 Kategori: Telegram\n🏷 Prioritas: ${idea.priority}\n🏷 Status: Mentah\n\n` +
           `👉 <a href="https://produktifmax.maulanacorp.my.id/ideas">Lihat di Dashboard</a>`,
         messageId
       );
@@ -310,7 +319,7 @@ export async function POST(req: NextRequest) {
       msg.chat.id,
       `✅ <b>Ide tersimpan!</b>\n\n` +
         `💡 ${idea.title}` +
-        `\n\n📂 Kategori: Telegram\n🏷 Status: Mentah\n\n` +
+        `\n\n📂 Kategori: Telegram\n🏷 Prioritas: ${idea.priority}\n🏷 Status: Mentah\n\n` +
         `👉 <a href="https://produktifmax.maulanacorp.my.id/ideas">Lihat di Dashboard</a>`,
       messageId
     );

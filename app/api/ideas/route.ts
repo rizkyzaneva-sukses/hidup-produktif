@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
         description: body.description || null,
         role: body.role || 'Umum',
         category: body.category || 'Random',
+        priority: body.priority || 'P3',
         status: body.status || 'Mentah',
       },
     });
